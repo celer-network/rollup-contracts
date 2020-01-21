@@ -23,9 +23,6 @@
     "lint:sol:fix": "solium -d contracts/ --fix",
     "lint:sol": "solium -d contracts/"
   },
-  "pre-commit": [
-    "lint:sol"
-  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jdkanani/protocol.git"
@@ -59,15 +56,13 @@
     "eslint-plugin-standard": "4.0.0",
     "eth-gas-reporter": "0.1.12",
     "eth-sig-util": "^2.1.1",
-    "ethereumjs-wallet": "0.6.2",
     "ethers": "4.0.13",
     "moonwalker": "github:atvanguard/moonwalker#53e29e33c0f929ab96c882d4a680a0cce7ea5888",
-    "pre-commit": "^1.2.2",
     "safe-buffer": "5.1.2",
     "solium": "^1.1.8",
     "truffle": "5.0.34",
-    "web3": "^1.0.0-beta.33",
-    "web3-eth-abi": "^1.0.0-beta.51"
+    "web3": "^1.2.4",
+    "web3-eth-abi": "^1.2.4"
   },
   "dependencies": {
     "commander": "^4.0.1",
