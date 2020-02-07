@@ -1,47 +1,14 @@
-# Matic contracts
+# Celer Optimistic Rollup Contracts
 
-[![Build Status](https://travis-ci.org/maticnetwork/contracts.svg?branch=master)](https://travis-ci.org/maticnetwork/contracts)
+## Mainchain Contracts
 
-Ethereum smart contracts that power the [Matic Network](https://matic.network).
+Optimistic Rollup for deposit, withdraw and transfer of registered and mapped
+ERC-20 tokens. The rollup chain tracks a users balances and nonces for a list of
+tokens. An aggregator is expected to periodically submit the rollup blocks to
+the contract.
 
-### Install dependencies with
+## Sidechain Contracts
 
-```
-npm install
-```
-
-### Compile
-```
-npm run template:process
-npm run truffle:compile
-```
-
-### Start main chain and side chain
-
-- Start Main chain
-```
-npm run testrpc
-```
-- Start Matic side chain. Requires docker.
-```
-npm run bor:simulate
-```
-- If you ran a bor instance before, a dead docker container might still be lying around, clean it with
-```
-npm run bor:clean
-```
-- Run a bor (our matic chain node) instance.
-
-
-### Deploy Contracts
-- For local development
-```
-npm run truffle:migrate
-```
-
-- For a properly initialized set of contracts, follow the instructions [here](./deploy-migrations/README.md).
-
-### Run tests
-```
-npm test
-```
+Modified ERC-20 contract to emit necessary data for rollup. In particular,
+we augmented the transfer() function to include signature as an extra parameter
+for rollup fraud proofs.
