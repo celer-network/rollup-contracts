@@ -1,0 +1,45 @@
+{
+  "name": "sidechain-contracts",
+  "version": "0.0.1",
+  "description": "Celer sidechain contracts",
+  "scripts": {
+    "build": "npm run compile && npm run typechain",
+    "compile": "npx buidler compile",
+    "typechain": "npx buidler compile && typechain --outDir typechain --target ethers 'build/*.json'",
+    "test": "npx buidler test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/celer-network/sidechain-contracts.git"
+  },
+  "author": {
+    "name": "Michael Zhou",
+    "email": "zhoumotongxue008@gmail.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/celer-network/sidechain-contracts/issues"
+  },
+  "homepage": "https://github.com/celer-network/sidechain-contracts#readme",
+  "devDependencies": {
+    "@nomiclabs/buidler": "^1.1.2",
+    "@nomiclabs/buidler-ethers": "^1.1.2",
+    "@nomiclabs/buidler-waffle": "^1.1.2",
+    "@types/chai": "^4.2.9",
+    "@types/mocha": "^7.0.1",
+    "@types/node": "^13.7.1",
+    "@types/sinon-chai": "^3.2.3",
+    "buidler-typechain": "^0.0.5",
+    "chai": "^4.2.0",
+    "ethereum-waffle": "^2.3.2",
+    "ethers": "^4.0.44",
+    "openzeppelin-solidity": "^2.5.0",
+    "ts-node": "^8.6.2",
+    "typechain": "^1.0.5",
+    "typechain-target-ethers": "^1.0.3",
+    "typechain-target-truffle": "^1.0.2",
+    "typechain-target-web3-v1": "^1.0.4",
+    "typescript": "^3.7.5"
+  },
+  "dependencies": {}
+}

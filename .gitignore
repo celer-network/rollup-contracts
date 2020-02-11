@@ -1,0 +1,11 @@
+bin/
+cache/
+node_modules/
+build/
+typechain/
+artifacts/
+
+*.pid
+*.log
+
+.DS_Store
