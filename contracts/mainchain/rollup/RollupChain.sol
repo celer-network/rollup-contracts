@@ -2,12 +2,14 @@ pragma solidity ^0.5.2;
 pragma experimental ABIEncoderV2;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import {IERC20} from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 /* Internal Imports */
 import {DataTypes as dt} from "./DataTypes.sol";
 import {RollupMerkleUtils} from "./RollupMerkleUtils.sol";
 import {TransitionEvaluator} from "./TransitionEvaluator.sol";
 import {MainchainTokenRegistry} from "./MainchainTokenRegistry.sol";
+
 
 contract RollupChain {
     using SafeMath for uint256;
@@ -30,6 +32,7 @@ contract RollupChain {
     /* Events */
     event DecodedTransition(bool success, bytes returnData);
     event NewRollupBlock(bytes[] block, uint256 blockNumber);
+    event Deposit(address account, address token, uint256 amount);
 
     /***************
      * Constructor *
@@ -168,10 +171,12 @@ contract RollupChain {
 
         /********* #2: DECODE_TRANSITIONS *********/
         // Decode our transitions and determine which storage slots we'll need in order to validate the transition
-        (bool success, bytes32 preStateRoot, bytes32 postStateRoot, uint256[] memory storageSlotIndexes) = getStateRootsAndStorageSlots(
-            preStateTransition,
-            invalidTransition
-        );
+        (
+            bool success,
+            bytes32 preStateRoot,
+            bytes32 postStateRoot,
+            uint256[] memory storageSlotIndexes
+        ) = getStateRootsAndStorageSlots(preStateTransition, invalidTransition);
         // If not success something went wrong with the decoding...
         if (!success) {
             // Prune the block if it has an incorrectly encoded transition!
@@ -361,5 +366,26 @@ contract RollupChain {
                 _accountInfo.balances,
                 _accountInfo.nonces
             );
+    }
+
+    function deposit(address _token, uint256 _amount) external {
+        require(
+            IERC20(_token).transferFrom(msg.sender, address(this), _amount),
+            "Token transfer failed"
+        );
+        emit Deposit(msg.sender, _token, _amount);
+    }
+
+    function withdraw(dt.IncludedTransition memory _includedTransition) public {
+        require(
+            checkTransitionInclusion(_includedTransition),
+            "Withdraw transition must be included"
+        );
+        dt.WithdrawTransition memory withdrawTransition = transitionEvaluator
+            .decodeWithdrawTransition(_includedTransition.transition);
+        address token = tokenRegistry.tokenIndexToTokenAddress(
+            withdrawTransition.tokenIndex
+        );
+        IERC20(token).transfer(msg.sender, withdrawTransition.amount);
     }
 }

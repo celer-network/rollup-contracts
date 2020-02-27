@@ -7,6 +7,7 @@ import {
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
+
 contract SidechainERC20 is ERC20, ERC20Detailed, Ownable {
     using SafeMath for uint256;
 

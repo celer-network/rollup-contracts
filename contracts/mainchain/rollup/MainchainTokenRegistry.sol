@@ -2,6 +2,7 @@ pragma solidity ^0.5.2;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
+
 contract MainchainTokenRegistry is Ownable {
     event TokenRegisteredOnMainchain(address tokenAddress);
 

@@ -4,6 +4,7 @@ node_modules/
 build/
 typechain/
 artifacts/
+genfiles/
 
 *.pid
 *.log

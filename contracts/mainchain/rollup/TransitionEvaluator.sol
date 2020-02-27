@@ -7,6 +7,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import {DataTypes as dt} from "./DataTypes.sol";
 import {MainchainTokenRegistry} from "./MainchainTokenRegistry.sol";
 
+
 contract TransitionEvaluator {
     using SafeMath for uint256;
 
@@ -48,13 +49,13 @@ contract TransitionEvaluator {
         bytes32[] memory outputs;
         // Apply the transition and record the resulting storage slots
         if (transitionType == TRANSITION_TYPE_INITIAL_DEPOSIT) {
-            dt.InitialDepositTransition memory initialDeposit = decodeInitialDepositTransition(
-                transition
-            );
-            dt.AccountInfo memory updatedAccountInfo = applyInitialDepositTransition(
-                initialDeposit,
-                storageSlots[0]
-            );
+
+                dt.InitialDepositTransition memory initialDeposit
+             = decodeInitialDepositTransition(transition);
+
+
+                dt.AccountInfo memory updatedAccountInfo
+             = applyInitialDepositTransition(initialDeposit, storageSlots[0]);
             outputs = new bytes32[](1);
             outputs[0] = getAccountInfoHash(updatedAccountInfo);
         } else if (transitionType == TRANSITION_TYPE_DEPOSIT) {
@@ -81,7 +82,10 @@ contract TransitionEvaluator {
             dt.TransferTransition memory transfer = decodeTransferTransition(
                 transition
             );
-            dt.AccountInfo[2] memory updatedAccountInfos = applyTransferTransition(
+
+
+                dt.AccountInfo[2] memory updatedAccountInfos
+             = applyTransferTransition(
                 transfer,
                 [storageSlots[0], storageSlots[1]]
             );
@@ -125,9 +129,9 @@ contract TransitionEvaluator {
         uint256[] memory storageSlots;
         uint256 transitionType = extractTransitionType(rawTransition);
         if (transitionType == TRANSITION_TYPE_INITIAL_DEPOSIT) {
-            dt.InitialDepositTransition memory transition = decodeInitialDepositTransition(
-                rawTransition
-            );
+
+                dt.InitialDepositTransition memory transition
+             = decodeInitialDepositTransition(rawTransition);
             stateRoot = transition.stateRoot;
             storageSlots[0] = transition.accountSlotIndex;
         } else if (transitionType == TRANSITION_TYPE_DEPOSIT) {
@@ -375,8 +379,15 @@ contract TransitionEvaluator {
         pure
         returns (dt.InitialDepositTransition memory)
     {
-        (uint256 transitionType, bytes32 stateRoot, uint256 accountSlotIndex, address account, uint256 tokenIndex, uint256 amount, bytes memory signature) = abi
-            .decode(
+        (
+            uint256 transitionType,
+            bytes32 stateRoot,
+            uint256 accountSlotIndex,
+            address account,
+            uint256 tokenIndex,
+            uint256 amount,
+            bytes memory signature
+        ) = abi.decode(
             (_rawBytes),
             (uint256, bytes32, uint256, address, uint256, uint256, bytes)
         );
@@ -398,8 +409,14 @@ contract TransitionEvaluator {
         pure
         returns (dt.DepositTransition memory)
     {
-        (uint256 transitionType, bytes32 stateRoot, uint256 accountSlotIndex, uint256 tokenIndex, uint256 amount, bytes memory signature) = abi
-            .decode(
+        (
+            uint256 transitionType,
+            bytes32 stateRoot,
+            uint256 accountSlotIndex,
+            uint256 tokenIndex,
+            uint256 amount,
+            bytes memory signature
+        ) = abi.decode(
             (_rawBytes),
             (uint256, bytes32, uint256, uint256, uint256, bytes)
         );
@@ -419,8 +436,14 @@ contract TransitionEvaluator {
         pure
         returns (dt.WithdrawTransition memory)
     {
-        (uint256 transitionType, bytes32 stateRoot, uint256 accountSlotIndex, uint256 tokenIndex, uint256 amount, bytes memory signature) = abi
-            .decode(
+        (
+            uint256 transitionType,
+            bytes32 stateRoot,
+            uint256 accountSlotIndex,
+            uint256 tokenIndex,
+            uint256 amount,
+            bytes memory signature
+        ) = abi.decode(
             (_rawBytes),
             (uint256, bytes32, uint256, uint256, uint256, bytes)
         );
@@ -444,8 +467,16 @@ contract TransitionEvaluator {
         pure
         returns (dt.TransferTransition memory)
     {
-        (uint256 transitionType, bytes32 stateRoot, uint256 senderSlotIndex, uint256 recipientSlotIndex, uint256 tokenIndex, uint256 amount, uint256 nonce, bytes memory signature) = abi
-            .decode(
+        (
+            uint256 transitionType,
+            bytes32 stateRoot,
+            uint256 senderSlotIndex,
+            uint256 recipientSlotIndex,
+            uint256 tokenIndex,
+            uint256 amount,
+            uint256 nonce,
+            bytes memory signature
+        ) = abi.decode(
             (_rawBytes),
             (
                 uint256,
@@ -490,6 +521,7 @@ contract TransitionEvaluator {
 
         return (v, r, s);
     }
+
     // verifies a signature on a 32 byte value -- note this means we must be
     // signing / verifying the hash of our transactions, not the encodings
     // themselves -- luckily, DefaultSignatureProvider now does this.

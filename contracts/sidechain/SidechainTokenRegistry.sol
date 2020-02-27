@@ -3,6 +3,7 @@ pragma solidity ^0.5.2;
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./SidechainERC20.sol";
 
+
 contract SidechainTokenRegistry is Ownable {
     event TokenRegisteredOnSidechain(
         address mainchainToken,
