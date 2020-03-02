@@ -3,8 +3,11 @@ pragma solidity ^0.5.2;
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 
-contract MainchainTokenRegistry is Ownable {
-    event TokenRegisteredOnMainchain(address tokenAddress);
+contract RollupTokenRegistry is Ownable {
+    event TokenRegistered(
+        address indexed tokenAddress,
+        uint256 indexed tokenIndex
+    );
 
     mapping(address => uint256) public tokenAddressToTokenIndex;
     mapping(uint256 => address) public tokenIndexToTokenAddress;
@@ -18,8 +21,8 @@ contract MainchainTokenRegistry is Ownable {
         ) {
             tokenAddressToTokenIndex[_tokenAddress] = numTokens;
             tokenIndexToTokenAddress[numTokens] = _tokenAddress;
+            emit TokenRegistered(_tokenAddress, numTokens);
             numTokens = numTokens + 1;
-            emit TokenRegisteredOnMainchain(_tokenAddress);
         }
     }
 }

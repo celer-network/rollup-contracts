@@ -5,7 +5,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /* Internal Imports */
 import {DataTypes as dt} from "./DataTypes.sol";
-import {MainchainTokenRegistry} from "./MainchainTokenRegistry.sol";
+import {RollupTokenRegistry} from "./RollupTokenRegistry.sol";
 
 
 contract TransitionEvaluator {
@@ -18,10 +18,10 @@ contract TransitionEvaluator {
     uint256 constant TRANSITION_TYPE_WITHDRAW = 2;
     uint256 constant TRANSITION_TYPE_TRANSFER = 3;
 
-    MainchainTokenRegistry tokenRegistry;
+    RollupTokenRegistry tokenRegistry;
 
     constructor(address _tokenRegistryAddress) public {
-        tokenRegistry = MainchainTokenRegistry(_tokenRegistryAddress);
+        tokenRegistry = RollupTokenRegistry(_tokenRegistryAddress);
     }
 
     function evaluateTransition(

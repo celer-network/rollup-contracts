@@ -8,7 +8,7 @@ import {IERC20} from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import {DataTypes as dt} from "./DataTypes.sol";
 import {RollupMerkleUtils} from "./RollupMerkleUtils.sol";
 import {TransitionEvaluator} from "./TransitionEvaluator.sol";
-import {MainchainTokenRegistry} from "./MainchainTokenRegistry.sol";
+import {RollupTokenRegistry} from "./RollupTokenRegistry.sol";
 
 
 contract RollupChain {
@@ -20,7 +20,7 @@ contract RollupChain {
     // The Rollup Merkle Tree library (currently a contract for ease of testing)
     RollupMerkleUtils merkleUtils;
     // The token registry
-    MainchainTokenRegistry tokenRegistry;
+    RollupTokenRegistry tokenRegistry;
     // All the blocks!
     dt.Block[] public blocks;
     bytes32 public constant ZERO_BYTES32 = 0x0000000000000000000000000000000000000000000000000000000000000000;
@@ -45,7 +45,7 @@ contract RollupChain {
     ) public {
         transitionEvaluator = TransitionEvaluator(_transitionEvaluatorAddress);
         merkleUtils = RollupMerkleUtils(_rollupMerkleUtilsAddress);
-        tokenRegistry = MainchainTokenRegistry(_tokenRegistryAddress);
+        tokenRegistry = RollupTokenRegistry(_tokenRegistryAddress);
         aggregatorAddress = _aggregatorAddress;
     }
 

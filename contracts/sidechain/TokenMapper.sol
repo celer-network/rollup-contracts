@@ -4,16 +4,16 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./SidechainERC20.sol";
 
 
-contract SidechainTokenRegistry is Ownable {
-    event TokenRegisteredOnSidechain(
-        address mainchainToken,
-        address sidechainToken
+contract TokenMapper is Ownable {
+    event TokenMapped(
+        address indexed mainchainToken,
+        address indexed sidechainToken
     );
 
     mapping(address => address) public mainchainTokenToSidechainToken;
     mapping(address => address) public sidechainTokenToMainchainToken;
 
-    function registerToken(
+    function mapToken(
         address _mainchainToken,
         string memory _name,
         string memory _symbol,
@@ -31,7 +31,7 @@ contract SidechainTokenRegistry is Ownable {
         mainchainTokenToSidechainToken[_mainchainToken] = sidechainToken;
         sidechainTokenToMainchainToken[sidechainToken] = _mainchainToken;
 
-        emit TokenRegisteredOnSidechain(_mainchainToken, sidechainToken);
+        emit TokenMapped(_mainchainToken, sidechainToken);
 
         return sidechainToken;
     }
