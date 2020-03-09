@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /* Internal Imports */
-import {DataTypes as dt} from "./DataTypes.sol";
+import {DataTypes} from "./DataTypes.sol";
 import {RollupTokenRegistry} from "./RollupTokenRegistry.sol";
 
 
@@ -26,22 +26,23 @@ contract TransitionEvaluator {
 
     function evaluateTransition(
         bytes calldata _transition,
-        dt.StorageSlot[] calldata _storageSlots
+        DataTypes.StorageSlot[] calldata _storageSlots
     ) external view returns (bytes32[] memory) {
         // Convert our inputs to memory
         bytes memory transition = _transition;
-        dt.StorageSlot[] memory storageSlots = new dt.StorageSlot[](
-            _storageSlots.length
-        );
+
+
+            DataTypes.StorageSlot[] memory storageSlots
+         = new DataTypes.StorageSlot[](_storageSlots.length);
         // Direct copy not supported by Solidity yet
         for (uint256 i = 0; i < _storageSlots.length; i++) {
             uint256 slotIndex = _storageSlots[i].slotIndex;
             address account = _storageSlots[i].value.account;
             uint256[] memory balances = _storageSlots[i].value.balances;
             uint256[] memory nonces = _storageSlots[i].value.nonces;
-            storageSlots[i] = dt.StorageSlot(
+            storageSlots[i] = DataTypes.StorageSlot(
                 slotIndex,
-                dt.AccountInfo(account, balances, nonces)
+                DataTypes.AccountInfo(account, balances, nonces)
             );
         }
         // Extract the transition type
@@ -50,41 +51,41 @@ contract TransitionEvaluator {
         // Apply the transition and record the resulting storage slots
         if (transitionType == TRANSITION_TYPE_INITIAL_DEPOSIT) {
 
-                dt.InitialDepositTransition memory initialDeposit
+                DataTypes.InitialDepositTransition memory initialDeposit
              = decodeInitialDepositTransition(transition);
 
 
-                dt.AccountInfo memory updatedAccountInfo
+                DataTypes.AccountInfo memory updatedAccountInfo
              = applyInitialDepositTransition(initialDeposit, storageSlots[0]);
             outputs = new bytes32[](1);
             outputs[0] = getAccountInfoHash(updatedAccountInfo);
         } else if (transitionType == TRANSITION_TYPE_DEPOSIT) {
-            dt.DepositTransition memory deposit = decodeDepositTransition(
-                transition
-            );
-            dt.AccountInfo memory updatedAccountInfo = applyDepositTransition(
-                deposit,
-                storageSlots[0]
-            );
+
+                DataTypes.DepositTransition memory deposit
+             = decodeDepositTransition(transition);
+
+
+                DataTypes.AccountInfo memory updatedAccountInfo
+             = applyDepositTransition(deposit, storageSlots[0]);
             outputs = new bytes32[](1);
             outputs[0] = getAccountInfoHash(updatedAccountInfo);
         } else if (transitionType == TRANSITION_TYPE_WITHDRAW) {
-            dt.WithdrawTransition memory withdraw = decodeWithdrawTransition(
-                transition
-            );
-            dt.AccountInfo memory updatedAccountInfo = applyWithdrawTransition(
-                withdraw,
-                storageSlots[0]
-            );
+
+                DataTypes.WithdrawTransition memory withdraw
+             = decodeWithdrawTransition(transition);
+
+
+                DataTypes.AccountInfo memory updatedAccountInfo
+             = applyWithdrawTransition(withdraw, storageSlots[0]);
             outputs = new bytes32[](1);
             outputs[0] = getAccountInfoHash(updatedAccountInfo);
         } else if (transitionType == TRANSITION_TYPE_TRANSFER) {
-            dt.TransferTransition memory transfer = decodeTransferTransition(
-                transition
-            );
+
+                DataTypes.TransferTransition memory transfer
+             = decodeTransferTransition(transition);
 
 
-                dt.AccountInfo[2] memory updatedAccountInfos
+                DataTypes.AccountInfo[2] memory updatedAccountInfos
              = applyTransferTransition(
                 transfer,
                 [storageSlots[0], storageSlots[1]]
@@ -130,26 +131,26 @@ contract TransitionEvaluator {
         uint256 transitionType = extractTransitionType(rawTransition);
         if (transitionType == TRANSITION_TYPE_INITIAL_DEPOSIT) {
 
-                dt.InitialDepositTransition memory transition
+                DataTypes.InitialDepositTransition memory transition
              = decodeInitialDepositTransition(rawTransition);
             stateRoot = transition.stateRoot;
             storageSlots[0] = transition.accountSlotIndex;
         } else if (transitionType == TRANSITION_TYPE_DEPOSIT) {
-            dt.DepositTransition memory transition = decodeDepositTransition(
-                rawTransition
-            );
+
+                DataTypes.DepositTransition memory transition
+             = decodeDepositTransition(rawTransition);
             stateRoot = transition.stateRoot;
             storageSlots[0] = transition.accountSlotIndex;
         } else if (transitionType == TRANSITION_TYPE_WITHDRAW) {
-            dt.WithdrawTransition memory transition = decodeWithdrawTransition(
-                rawTransition
-            );
+
+                DataTypes.WithdrawTransition memory transition
+             = decodeWithdrawTransition(rawTransition);
             stateRoot = transition.stateRoot;
             storageSlots[0] = transition.accountSlotIndex;
         } else if (transitionType == TRANSITION_TYPE_TRANSFER) {
-            dt.TransferTransition memory transition = decodeTransferTransition(
-                rawTransition
-            );
+
+                DataTypes.TransferTransition memory transition
+             = decodeTransferTransition(rawTransition);
             stateRoot = transition.stateRoot;
             storageSlots[0] = transition.senderSlotIndex;
             storageSlots[1] = transition.recipientSlotIndex;
@@ -157,7 +158,7 @@ contract TransitionEvaluator {
         return (stateRoot, storageSlots);
     }
 
-    function getWithdrawTxHash(dt.WithdrawTx memory _withdrawTx)
+    function getWithdrawTxHash(DataTypes.WithdrawTx memory _withdrawTx)
         internal
         pure
         returns (bytes32)
@@ -172,7 +173,7 @@ contract TransitionEvaluator {
             );
     }
 
-    function getTransferTxHash(dt.TransferTx memory _transferTx)
+    function getTransferTxHash(DataTypes.TransferTx memory _transferTx)
         internal
         pure
         returns (bytes32)
@@ -189,7 +190,7 @@ contract TransitionEvaluator {
             );
     }
 
-    function verifyEmptyAccountInfo(dt.AccountInfo memory _accountInfo)
+    function verifyEmptyAccountInfo(DataTypes.AccountInfo memory _accountInfo)
         internal
         pure
     {
@@ -208,15 +209,16 @@ contract TransitionEvaluator {
      * Apply an InitialDepositTransition.
      */
     function applyInitialDepositTransition(
-        dt.InitialDepositTransition memory _transition,
-        dt.StorageSlot memory _storageSlot
-    ) public view returns (dt.AccountInfo memory) {
+        DataTypes.InitialDepositTransition memory _transition,
+        DataTypes.StorageSlot memory _storageSlot
+    ) public view returns (DataTypes.AccountInfo memory) {
         // Verify that the AccountInfo is empty
         verifyEmptyAccountInfo(_storageSlot.value);
         // Now set storage slot to have the address of the registered account
         _storageSlot.value.account = _transition.account;
         // Next create a DepositTransition based on this InitialDepositTransition
-        dt.DepositTransition memory depositTransition = dt.DepositTransition(
+        DataTypes.DepositTransition memory depositTransition = DataTypes
+            .DepositTransition(
             TRANSITION_TYPE_DEPOSIT,
             _transition.stateRoot,
             _transition.accountSlotIndex,
@@ -232,12 +234,12 @@ contract TransitionEvaluator {
      * Apply a DepositTransition.
      */
     function applyDepositTransition(
-        dt.DepositTransition memory _transition,
-        dt.StorageSlot memory _storageSlot
-    ) public view returns (dt.AccountInfo memory) {
+        DataTypes.DepositTransition memory _transition,
+        DataTypes.StorageSlot memory _storageSlot
+    ) public view returns (DataTypes.AccountInfo memory) {
         address account = _storageSlot.value.account;
 
-        dt.DepositTx memory depositTx = dt.DepositTx(
+        DataTypes.DepositTx memory depositTx = DataTypes.DepositTx(
             account,
             tokenRegistry.tokenIndexToTokenAddress(_transition.tokenIndex),
             _transition.amount
@@ -245,7 +247,7 @@ contract TransitionEvaluator {
 
         // TODO (dominator008): Verify signature of depositer
 
-        dt.AccountInfo memory outputStorage;
+        DataTypes.AccountInfo memory outputStorage;
         uint256 tokenIndex = _transition.tokenIndex;
         uint256 oldBalance = _storageSlot.value.balances[tokenIndex];
         _storageSlot.value.balances[tokenIndex] = oldBalance.add(
@@ -259,12 +261,12 @@ contract TransitionEvaluator {
      * Apply a WithdrawTransition.
      */
     function applyWithdrawTransition(
-        dt.WithdrawTransition memory _transition,
-        dt.StorageSlot memory _storageSlot
-    ) public view returns (dt.AccountInfo memory) {
+        DataTypes.WithdrawTransition memory _transition,
+        DataTypes.StorageSlot memory _storageSlot
+    ) public view returns (DataTypes.AccountInfo memory) {
         address account = _storageSlot.value.account;
 
-        dt.WithdrawTx memory withdrawTx = dt.WithdrawTx(
+        DataTypes.WithdrawTx memory withdrawTx = DataTypes.WithdrawTx(
             account,
             tokenRegistry.tokenIndexToTokenAddress(_transition.tokenIndex),
             _transition.amount
@@ -278,7 +280,7 @@ contract TransitionEvaluator {
             ),
             "Transfer signature is invalid!"
         );
-        dt.AccountInfo memory outputStorage;
+        DataTypes.AccountInfo memory outputStorage;
         uint256 tokenIndex = _transition.tokenIndex;
         uint256 oldBalance = _storageSlot.value.balances[tokenIndex];
         _storageSlot.value.balances[tokenIndex] = oldBalance.sub(
@@ -292,13 +294,13 @@ contract TransitionEvaluator {
      * Apply a TransferTransition.
      */
     function applyTransferTransition(
-        dt.TransferTransition memory _transition,
-        dt.StorageSlot[2] memory _storageSlots
-    ) public view returns (dt.AccountInfo[2] memory) {
+        DataTypes.TransferTransition memory _transition,
+        DataTypes.StorageSlot[2] memory _storageSlots
+    ) public view returns (DataTypes.AccountInfo[2] memory) {
         // First construct the transaction from the storage slots
         address sender = _storageSlots[0].value.account;
         address recipient = _storageSlots[1].value.account;
-        dt.TransferTx memory transferTx = dt.TransferTx(
+        DataTypes.TransferTx memory transferTx = DataTypes.TransferTx(
             sender,
             recipient,
             tokenRegistry.tokenIndexToTokenAddress(_transition.tokenIndex),
@@ -317,7 +319,7 @@ contract TransitionEvaluator {
         );
 
         // Create an array to store our output storage slots
-        dt.AccountInfo[2] memory outputStorage;
+        DataTypes.AccountInfo[2] memory outputStorage;
         // Now we know the signature is correct, let's compute the output of the transaction
         uint256 tokenIndex = _transition.tokenIndex;
         uint256 senderBalance = _storageSlots[0].value.balances[tokenIndex];
@@ -349,7 +351,7 @@ contract TransitionEvaluator {
     /**
      * Get the hash of the AccountInfo.
      */
-    function getAccountInfoHash(dt.AccountInfo memory _accountInfo)
+    function getAccountInfoHash(DataTypes.AccountInfo memory _accountInfo)
         public
         pure
         returns (bytes32)
@@ -377,7 +379,7 @@ contract TransitionEvaluator {
     function decodeInitialDepositTransition(bytes memory _rawBytes)
         internal
         pure
-        returns (dt.InitialDepositTransition memory)
+        returns (DataTypes.InitialDepositTransition memory)
     {
         (
             uint256 transitionType,
@@ -391,7 +393,7 @@ contract TransitionEvaluator {
             (_rawBytes),
             (uint256, bytes32, uint256, address, uint256, uint256, bytes)
         );
-        dt.InitialDepositTransition memory transition = dt
+        DataTypes.InitialDepositTransition memory transition = DataTypes
             .InitialDepositTransition(
             transitionType,
             stateRoot,
@@ -407,7 +409,7 @@ contract TransitionEvaluator {
     function decodeDepositTransition(bytes memory _rawBytes)
         internal
         pure
-        returns (dt.DepositTransition memory)
+        returns (DataTypes.DepositTransition memory)
     {
         (
             uint256 transitionType,
@@ -420,7 +422,8 @@ contract TransitionEvaluator {
             (_rawBytes),
             (uint256, bytes32, uint256, uint256, uint256, bytes)
         );
-        dt.DepositTransition memory transition = dt.DepositTransition(
+        DataTypes.DepositTransition memory transition = DataTypes
+            .DepositTransition(
             transitionType,
             stateRoot,
             accountSlotIndex,
@@ -434,7 +437,7 @@ contract TransitionEvaluator {
     function decodeWithdrawTransition(bytes memory _rawBytes)
         public
         pure
-        returns (dt.WithdrawTransition memory)
+        returns (DataTypes.WithdrawTransition memory)
     {
         (
             uint256 transitionType,
@@ -447,7 +450,8 @@ contract TransitionEvaluator {
             (_rawBytes),
             (uint256, bytes32, uint256, uint256, uint256, bytes)
         );
-        dt.WithdrawTransition memory transition = dt.WithdrawTransition(
+        DataTypes.WithdrawTransition memory transition = DataTypes
+            .WithdrawTransition(
             transitionType,
             stateRoot,
             accountSlotIndex,
@@ -465,7 +469,7 @@ contract TransitionEvaluator {
     function decodeTransferTransition(bytes memory _rawBytes)
         internal
         pure
-        returns (dt.TransferTransition memory)
+        returns (DataTypes.TransferTransition memory)
     {
         (
             uint256 transitionType,
@@ -489,7 +493,8 @@ contract TransitionEvaluator {
                 bytes
             )
         );
-        dt.TransferTransition memory transition = dt.TransferTransition(
+        DataTypes.TransferTransition memory transition = DataTypes
+            .TransferTransition(
             transitionType,
             stateRoot,
             senderSlotIndex,

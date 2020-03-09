@@ -51,7 +51,6 @@ contract SidechainERC20 is ERC20, ERC20Detailed, Ownable {
 
     function deposit(address account, uint256 amount, bytes memory signature)
         public
-        onlyOwner
     {
         require(amount > 0 && account != address(0x0));
 

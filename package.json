@@ -6,7 +6,7 @@
     "build": "npm run compile && npm run typechain",
     "compile": "npx buidler compile",
     "typechain": "npx buidler compile && typechain --outDir typechain --target ethers 'build/*.json'",
-    "bind:go": "npm run compile && scripts/bind_go.sh",
+    "bind:go": "npx buidler compile && scripts/bind_go.sh",
     "test": "npx buidler test"
   },
   "repository": {

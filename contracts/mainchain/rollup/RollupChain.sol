@@ -2,7 +2,6 @@ pragma solidity ^0.5.2;
 pragma experimental ABIEncoderV2;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import {IERC20} from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 /* Internal Imports */
 import {DataTypes as dt} from "./DataTypes.sol";
@@ -32,7 +31,6 @@ contract RollupChain {
     /* Events */
     event DecodedTransition(bool success, bytes returnData);
     event NewRollupBlock(bytes[] block, uint256 blockNumber);
-    event Deposit(address account, address token, uint256 amount);
 
     /***************
      * Constructor *
@@ -366,26 +364,5 @@ contract RollupChain {
                 _accountInfo.balances,
                 _accountInfo.nonces
             );
-    }
-
-    function deposit(address _token, uint256 _amount) external {
-        require(
-            IERC20(_token).transferFrom(msg.sender, address(this), _amount),
-            "Token transfer failed"
-        );
-        emit Deposit(msg.sender, _token, _amount);
-    }
-
-    function withdraw(dt.IncludedTransition memory _includedTransition) public {
-        require(
-            checkTransitionInclusion(_includedTransition),
-            "Withdraw transition must be included"
-        );
-        dt.WithdrawTransition memory withdrawTransition = transitionEvaluator
-            .decodeWithdrawTransition(_includedTransition.transition);
-        address token = tokenRegistry.tokenIndexToTokenAddress(
-            withdrawTransition.tokenIndex
-        );
-        IERC20(token).transfer(msg.sender, withdrawTransition.amount);
     }
 }
