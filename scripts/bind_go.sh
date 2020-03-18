@@ -21,6 +21,7 @@ extract_abi_bin RollupMerkleUtils
 extract_abi_bin DepositWithdrawManager
 extract_abi_bin SidechainERC20
 extract_abi_bin TokenMapper
+extract_abi_bin DummyApp
 
 rm -rf bindings/go/mainchain/rollup
 mkdir -p bindings/go/mainchain/rollup
@@ -33,6 +34,7 @@ run_abigen DepositWithdrawManager rollup bindings/go/mainchain/rollup/deposit_wi
 rm -rf bindings/go/sidechain
 mkdir -p bindings/go/sidechain
 run_abigen SidechainERC20 sidechain bindings/go/sidechain/sidechain_erc20
+run_abigen DummyApp sidechain bindings/go/sidechain/dummy_app
 run_abigen TokenMapper sidechain bindings/go/sidechain/token_mapper
 
 # Hack until figured out how to avoid duplicate declaration with abigen

@@ -31,6 +31,7 @@ contract RollupChain {
     /* Events */
     event DecodedTransition(bool success, bytes returnData);
     event NewRollupBlock(bytes[] block, uint256 blockNumber);
+    event Transition(bytes data);
 
     /***************
      * Constructor *
@@ -62,6 +63,11 @@ contract RollupChain {
             msg.sender == aggregatorAddress,
             "Only the aggregator may submit blocks"
         );
+
+        // For debugging
+        for (uint256 i = 0; i < _block.length; i++) {
+            emit Transition(_block[i]);
+        }
 
         bytes32 root = merkleUtils.getMerkleRoot(_block);
         dt.Block memory rollupBlock = dt.Block({
