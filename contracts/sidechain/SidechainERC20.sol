@@ -97,7 +97,11 @@ contract SidechainERC20 is ISidechainERC20, ERC20, ERC20Detailed, Ownable {
             bytes32 hash = keccak256(
                 abi.encodePacked(sender, recipient, amount, oldNonce)
             );
-            require(recoverAddress(hash, signature) == sender);
+            bytes32 prefixedHash = toEthSignedMessageHash(hash);
+            require(
+                recoverAddress(prefixedHash, signature) == sender,
+                "Wrong signature"
+            );
         }
 
         _transfer(sender, recipient, amount);
@@ -172,5 +176,21 @@ contract SidechainERC20 is ISidechainERC20, ERC20, ERC20Detailed, Ownable {
         }
         result = ecrecover(dataHash, v, r, s);
         require(result != address(0x0), "Error in ecrecover");
+    }
+
+    /**
+     * toEthSignedMessageHash
+     * @dev prefix a bytes32 value with "\x19Ethereum Signed Message:"
+     * and hash the result
+     */
+    function toEthSignedMessageHash(bytes32 hash)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return
+            keccak256(
+                abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
+            );
     }
 }

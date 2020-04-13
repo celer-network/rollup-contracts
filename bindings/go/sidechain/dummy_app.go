@@ -28,10 +28,10 @@ var (
 )
 
 // DummyAppABI is the input ABI used to generate the binding from.
-const DummyAppABI = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"signature\",\"type\":\"bytes\"}],\"name\":\"playerOneDeposit\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"playerTwoWithdraw\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+const DummyAppABI = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"signature\",\"type\":\"bytes\"}],\"name\":\"playerOneDeposit\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"playerTwoWithdraw\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
 
 // DummyAppBin is the compiled bytecode used for deploying new contracts.
-var DummyAppBin = "0x608060405234801561001057600080fd5b506040516104a43803806104a48339818101604052602081101561003357600080fd5b8101908080519060200190929190505050806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555060018081905550506104098061009b6000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c80635ef061221461003b578063f01a2cd114610116575b600080fd5b6101146004803603604081101561005157600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff1690602001909291908035906020019064010000000081111561008e57600080fd5b8201836020820111156100a057600080fd5b803590602001918460018302840111640100000000831117156100c257600080fd5b91908080601f016020809104026020016040519081016040528093929190818152602001838380828437600081840152601f19601f82011690508083019250505050505050919291929050505061015a565b005b6101586004803603602081101561012c57600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff1690602001909291905050506102c4565b005b8173ffffffffffffffffffffffffffffffffffffffff166312a837b43330600154856040518563ffffffff1660e01b8152600401808573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200183815260200180602001828103825283818151815260200191508051906020019080838360005b8381101561023557808201518184015260208101905061021a565b50505050905090810190601f1680156102625780820380516001836020036101000a031916815260200191505b5095505050505050602060405180830381600087803b15801561028457600080fd5b505af1158015610298573d6000803e3d6000fd5b505050506040513d60208110156102ae57600080fd5b8101908080519060200190929190505050505050565b8073ffffffffffffffffffffffffffffffffffffffff166312a837b430336001546040518463ffffffff1660e01b8152600401808473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200182815260200180602001828103825260008152602001602001945050505050602060405180830381600087803b15801561039557600080fd5b505af11580156103a9573d6000803e3d6000fd5b505050506040513d60208110156103bf57600080fd5b8101908080519060200190929190505050505056fea265627a7a72315820142711caa27848d04e32cf972bfb79cc3174cc502fc88f2ae5bc87fdbc7ced4764736f6c634300050f0032"
+var DummyAppBin = "0x608060405234801561001057600080fd5b5060405161048a38038061048a8339818101604052602081101561003357600080fd5b8101908080519060200190929190505050806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555060018081905550506103ef8061009b6000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c80632b4f82eb1461003b578063e0a572e314610045575b600080fd5b610043610100565b005b6100fe6004803603602081101561005b57600080fd5b810190808035906020019064010000000081111561007857600080fd5b82018360208201111561008a57600080fd5b803590602001918460018302840111640100000000831117156100ac57600080fd5b91908080601f016020809104026020016040519081016040528093929190818152602001838380828437600081840152601f19601f820116905080830192505050505050509192919290505050610230565b005b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166312a837b430336001546040518463ffffffff1660e01b8152600401808473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200182815260200180602001828103825260008152602001602001945050505050602060405180830381600087803b1580156101f257600080fd5b505af1158015610206573d6000803e3d6000fd5b505050506040513d602081101561021c57600080fd5b810190808051906020019092919050505050565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166312a837b43330600154856040518563ffffffff1660e01b8152600401808573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200183815260200180602001828103825283818151815260200191508051906020019080838360005b8381101561032c578082015181840152602081019050610311565b50505050905090810190601f1680156103595780820380516001836020036101000a031916815260200191505b5095505050505050602060405180830381600087803b15801561037b57600080fd5b505af115801561038f573d6000803e3d6000fd5b505050506040513d60208110156103a557600080fd5b8101908080519060200190929190505050505056fea265627a7a723158204bd0151dae1acebc34630fbada035bf11c02a253490927d880143fd534a76e3964736f6c634300050f0032"
 
 // DeployDummyApp deploys a new Ethereum contract, binding an instance of DummyApp to it.
 func DeployDummyApp(auth *bind.TransactOpts, backend bind.ContractBackend, _token common.Address) (common.Address, *types.Transaction, *DummyApp, error) {
@@ -189,44 +189,44 @@ func (_DummyApp *DummyAppTransactorRaw) Transact(opts *bind.TransactOpts, method
 	return _DummyApp.Contract.contract.Transact(opts, method, params...)
 }
 
-// PlayerOneDeposit is a paid mutator transaction binding the contract method 0x5ef06122.
+// PlayerOneDeposit is a paid mutator transaction binding the contract method 0xe0a572e3.
 //
-// Solidity: function playerOneDeposit(address token, bytes signature) returns()
-func (_DummyApp *DummyAppTransactor) PlayerOneDeposit(opts *bind.TransactOpts, token common.Address, signature []byte) (*types.Transaction, error) {
-	return _DummyApp.contract.Transact(opts, "playerOneDeposit", token, signature)
+// Solidity: function playerOneDeposit(bytes signature) returns()
+func (_DummyApp *DummyAppTransactor) PlayerOneDeposit(opts *bind.TransactOpts, signature []byte) (*types.Transaction, error) {
+	return _DummyApp.contract.Transact(opts, "playerOneDeposit", signature)
 }
 
-// PlayerOneDeposit is a paid mutator transaction binding the contract method 0x5ef06122.
+// PlayerOneDeposit is a paid mutator transaction binding the contract method 0xe0a572e3.
 //
-// Solidity: function playerOneDeposit(address token, bytes signature) returns()
-func (_DummyApp *DummyAppSession) PlayerOneDeposit(token common.Address, signature []byte) (*types.Transaction, error) {
-	return _DummyApp.Contract.PlayerOneDeposit(&_DummyApp.TransactOpts, token, signature)
+// Solidity: function playerOneDeposit(bytes signature) returns()
+func (_DummyApp *DummyAppSession) PlayerOneDeposit(signature []byte) (*types.Transaction, error) {
+	return _DummyApp.Contract.PlayerOneDeposit(&_DummyApp.TransactOpts, signature)
 }
 
-// PlayerOneDeposit is a paid mutator transaction binding the contract method 0x5ef06122.
+// PlayerOneDeposit is a paid mutator transaction binding the contract method 0xe0a572e3.
 //
-// Solidity: function playerOneDeposit(address token, bytes signature) returns()
-func (_DummyApp *DummyAppTransactorSession) PlayerOneDeposit(token common.Address, signature []byte) (*types.Transaction, error) {
-	return _DummyApp.Contract.PlayerOneDeposit(&_DummyApp.TransactOpts, token, signature)
+// Solidity: function playerOneDeposit(bytes signature) returns()
+func (_DummyApp *DummyAppTransactorSession) PlayerOneDeposit(signature []byte) (*types.Transaction, error) {
+	return _DummyApp.Contract.PlayerOneDeposit(&_DummyApp.TransactOpts, signature)
 }
 
-// PlayerTwoWithdraw is a paid mutator transaction binding the contract method 0xf01a2cd1.
+// PlayerTwoWithdraw is a paid mutator transaction binding the contract method 0x2b4f82eb.
 //
-// Solidity: function playerTwoWithdraw(address token) returns()
-func (_DummyApp *DummyAppTransactor) PlayerTwoWithdraw(opts *bind.TransactOpts, token common.Address) (*types.Transaction, error) {
-	return _DummyApp.contract.Transact(opts, "playerTwoWithdraw", token)
+// Solidity: function playerTwoWithdraw() returns()
+func (_DummyApp *DummyAppTransactor) PlayerTwoWithdraw(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _DummyApp.contract.Transact(opts, "playerTwoWithdraw")
 }
 
-// PlayerTwoWithdraw is a paid mutator transaction binding the contract method 0xf01a2cd1.
+// PlayerTwoWithdraw is a paid mutator transaction binding the contract method 0x2b4f82eb.
 //
-// Solidity: function playerTwoWithdraw(address token) returns()
-func (_DummyApp *DummyAppSession) PlayerTwoWithdraw(token common.Address) (*types.Transaction, error) {
-	return _DummyApp.Contract.PlayerTwoWithdraw(&_DummyApp.TransactOpts, token)
+// Solidity: function playerTwoWithdraw() returns()
+func (_DummyApp *DummyAppSession) PlayerTwoWithdraw() (*types.Transaction, error) {
+	return _DummyApp.Contract.PlayerTwoWithdraw(&_DummyApp.TransactOpts)
 }
 
-// PlayerTwoWithdraw is a paid mutator transaction binding the contract method 0xf01a2cd1.
+// PlayerTwoWithdraw is a paid mutator transaction binding the contract method 0x2b4f82eb.
 //
-// Solidity: function playerTwoWithdraw(address token) returns()
-func (_DummyApp *DummyAppTransactorSession) PlayerTwoWithdraw(token common.Address) (*types.Transaction, error) {
-	return _DummyApp.Contract.PlayerTwoWithdraw(&_DummyApp.TransactOpts, token)
+// Solidity: function playerTwoWithdraw() returns()
+func (_DummyApp *DummyAppTransactorSession) PlayerTwoWithdraw() (*types.Transaction, error) {
+	return _DummyApp.Contract.PlayerTwoWithdraw(&_DummyApp.TransactOpts)
 }
