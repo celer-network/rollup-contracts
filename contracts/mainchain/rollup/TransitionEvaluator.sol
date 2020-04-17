@@ -2,6 +2,7 @@ pragma solidity ^0.5.2;
 pragma experimental ABIEncoderV2;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 
 /* Internal Imports */
 import {DataTypes} from "./DataTypes.sol";
@@ -27,7 +28,7 @@ contract TransitionEvaluator {
     function evaluateTransition(
         bytes calldata _transition,
         DataTypes.StorageSlot[] calldata _storageSlots
-    ) external view returns (bytes32[] memory) {
+    ) external returns (bytes32[] memory) {
         // Convert our inputs to memory
         bytes memory transition = _transition;
 
@@ -45,6 +46,7 @@ contract TransitionEvaluator {
                 DataTypes.AccountInfo(account, balances, nonces)
             );
         }
+
         // Extract the transition type
         uint256 transitionType = extractTransitionType(transition);
         bytes32[] memory outputs;
@@ -134,24 +136,28 @@ contract TransitionEvaluator {
                 DataTypes.InitialDepositTransition memory transition
              = decodeInitialDepositTransition(rawTransition);
             stateRoot = transition.stateRoot;
+            storageSlots = new uint256[](1);
             storageSlots[0] = transition.accountSlotIndex;
         } else if (transitionType == TRANSITION_TYPE_DEPOSIT) {
 
                 DataTypes.DepositTransition memory transition
              = decodeDepositTransition(rawTransition);
             stateRoot = transition.stateRoot;
+            storageSlots = new uint256[](1);
             storageSlots[0] = transition.accountSlotIndex;
         } else if (transitionType == TRANSITION_TYPE_WITHDRAW) {
 
                 DataTypes.WithdrawTransition memory transition
              = decodeWithdrawTransition(rawTransition);
             stateRoot = transition.stateRoot;
+            storageSlots = new uint256[](1);
             storageSlots[0] = transition.accountSlotIndex;
         } else if (transitionType == TRANSITION_TYPE_TRANSFER) {
 
                 DataTypes.TransferTransition memory transition
              = decodeTransferTransition(rawTransition);
             stateRoot = transition.stateRoot;
+            storageSlots = new uint256[](2);
             storageSlots[0] = transition.senderSlotIndex;
             storageSlots[1] = transition.recipientSlotIndex;
         }
@@ -165,7 +171,7 @@ contract TransitionEvaluator {
     {
         return
             keccak256(
-                abi.encode(
+                abi.encodePacked(
                     _withdrawTx.account,
                     _withdrawTx.token,
                     _withdrawTx.amount
@@ -180,7 +186,7 @@ contract TransitionEvaluator {
     {
         return
             keccak256(
-                abi.encode(
+                abi.encodePacked(
                     _transferTx.sender,
                     _transferTx.recipient,
                     _transferTx.token,
@@ -272,13 +278,11 @@ contract TransitionEvaluator {
             _transition.amount
         );
 
+        bytes32 txHash = getWithdrawTxHash(withdrawTx);
+        bytes32 prefixedHash = ECDSA.toEthSignedMessageHash(txHash);
         require(
-            verifyEcdsaSignatureOnHash(
-                _transition.signature,
-                getWithdrawTxHash(withdrawTx),
-                account
-            ),
-            "Transfer signature is invalid!"
+            ECDSA.recover(prefixedHash, _transition.signature) == account,
+            "Withdraw signature is invalid!"
         );
         DataTypes.AccountInfo memory outputStorage;
         uint256 tokenIndex = _transition.tokenIndex;
@@ -309,12 +313,10 @@ contract TransitionEvaluator {
         );
 
         // Next check to see if the signature is valid
+        bytes32 txHash = getTransferTxHash(transferTx);
+        bytes32 prefixedHash = ECDSA.toEthSignedMessageHash(txHash);
         require(
-            verifyEcdsaSignatureOnHash(
-                _transition.signature,
-                getTransferTxHash(transferTx),
-                sender
-            ),
+            ECDSA.recover(prefixedHash, _transition.signature) == sender,
             "Transfer signature is invalid!"
         );
 
@@ -505,42 +507,5 @@ contract TransitionEvaluator {
             signature
         );
         return transition;
-    }
-
-    // splits a signature string into v, r, s
-    function splitSignature(bytes memory sig)
-        internal
-        pure
-        returns (uint8 v, bytes32 r, bytes32 s)
-    {
-        require(sig.length == 65, "invalid signature length.");
-
-        assembly {
-            // first 32 bytes, after the length prefix.
-            r := mload(add(sig, 32))
-            // second 32 bytes.
-            s := mload(add(sig, 64))
-            // final byte (first byte of the next 32 bytes).
-            v := byte(0, mload(add(sig, 96)))
-        }
-
-        return (v, r, s);
-    }
-
-    // verifies a signature on a 32 byte value -- note this means we must be
-    // signing / verifying the hash of our transactions, not the encodings
-    // themselves -- luckily, DefaultSignatureProvider now does this.
-    function verifyEcdsaSignatureOnHash(
-        bytes memory _signature,
-        bytes32 _hash,
-        address _pubkey
-    ) private pure returns (bool) {
-        bytes memory prefixedMessage = abi.encodePacked(
-            "\x19Ethereum Signed Message:\n32",
-            _hash
-        );
-        bytes32 digest = keccak256(prefixedMessage);
-        (uint8 v, bytes32 r, bytes32 s) = splitSignature(_signature);
-        return ecrecover(digest, v, r, s) == _pubkey;
     }
 }

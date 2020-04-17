@@ -26,7 +26,7 @@ contract RollupChain {
     // State tree height
     uint256 constant STATE_TREE_HEIGHT = 32;
 
-    address aggregatorAddress;
+    address public aggregatorAddress;
 
     /* Events */
     event DecodedTransition(bool success, bytes returnData);
@@ -76,7 +76,7 @@ contract RollupChain {
         });
         blocks.push(rollupBlock);
         // NOTE: Toggle the event if you'd like easier historical block queries
-        emit NewRollupBlock(_block, blocks.length);
+        emit NewRollupBlock(_block, blocks.length - 1);
         return root;
     }
 
@@ -210,10 +210,13 @@ contract RollupChain {
         /********* #5: EVALUATE_TRANSITION *********/
         // Now that we've verified and stored our storage in the state tree, lets apply the transaction
         // To do this first let's pull out the storage slots we care about
-        dt.StorageSlot[] memory storageSlots;
+        dt.StorageSlot[] memory storageSlots = new dt.StorageSlot[](
+            _transitionStorageSlots.length
+        );
         for (uint256 i = 0; i < _transitionStorageSlots.length; i++) {
             storageSlots[i] = _transitionStorageSlots[i].storageSlot;
         }
+
         bytes memory returnData;
         // Make the external call
         (success, returnData) = address(transitionEvaluator).call(
@@ -223,6 +226,7 @@ contract RollupChain {
                 storageSlots
             )
         );
+
         // Check if it was successful. If not, we've got to prune.
         if (!success) {
             pruneBlocksAfter(
