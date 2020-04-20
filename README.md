@@ -1,6 +1,6 @@
 # Celer Optimistic Rollup Contracts
 
-[![Build Status](https://travis-ci.com/celer-network/sidechain-contracts.svg?token=DvaxasPgAzCzksHzA2ct&branch=master)](https://travis-ci.com/celer-network/sidechain-contracts)
+[![Build Status](https://travis-ci.com/celer-network/rollup-contracts.svg?token=DvaxasPgAzCzksHzA2ct&branch=master)](https://travis-ci.com/celer-network/rollup-contracts)
 
 Smart contracts for the optimistic rollup part of the Celer sidechain. Note that
 this is skeleton code showing the general idea and is not meant to be used in
