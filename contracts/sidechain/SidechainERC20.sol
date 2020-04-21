@@ -1,17 +1,14 @@
-pragma solidity ^0.5.2;
+pragma solidity ^0.6.6;
 
 import {ISidechainERC20} from "./ISidechainERC20.sol";
 import {ERC20} from "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import {
-    ERC20Detailed
-} from "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/utils/Address.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/access/Ownable.sol";
 import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 
 
-contract SidechainERC20 is ISidechainERC20, ERC20, ERC20Detailed, Ownable {
+contract SidechainERC20 is ISidechainERC20, ERC20, Ownable {
     using SafeMath for uint256;
 
     event Deposit(
@@ -48,14 +45,17 @@ contract SidechainERC20 is ISidechainERC20, ERC20, ERC20Detailed, Ownable {
         string memory _name,
         string memory _symbol,
         uint8 _decimals
-    ) public ERC20Detailed(_name, _symbol, _decimals) {
+    ) public ERC20(_name, _symbol) {
         require(_mainchainToken != address(0x0));
         mainchainToken = _mainchainToken;
+        _setupDecimals(_decimals);
     }
 
-    function deposit(address account, uint256 amount, bytes memory signature)
-        public
-    {
+    function deposit(
+        address account,
+        uint256 amount,
+        bytes memory signature
+    ) public {
         require(amount > 0 && account != address(0x0));
 
         // TODO: Check validator signature
@@ -72,9 +72,11 @@ contract SidechainERC20 is ISidechainERC20, ERC20, ERC20Detailed, Ownable {
         emit Deposit(mainchainToken, account, amount, oldNonce, signature);
     }
 
-    function withdraw(address account, uint256 amount, bytes memory signature)
-        public
-    {
+    function withdraw(
+        address account,
+        uint256 amount,
+        bytes memory signature
+    ) public {
         require(amount > 0 && balanceOf(account) >= amount);
 
         _burn(account, amount);
@@ -85,12 +87,13 @@ contract SidechainERC20 is ISidechainERC20, ERC20, ERC20Detailed, Ownable {
         emit Withdraw(mainchainToken, account, amount, oldNonce, signature);
     }
 
+    // prettier-ignore
     function transfer(
         address sender,
         address recipient,
         uint256 amount,
         bytes memory signature
-    ) public returns (bool) {
+    ) public override returns (bool) {
         uint256 oldNonce = nonces[sender];
         if (!Address.isContract(sender)) {
             bytes32 hash = keccak256(
@@ -123,19 +126,27 @@ contract SidechainERC20 is ISidechainERC20, ERC20, ERC20Detailed, Ownable {
         return true;
     }
 
-    function transfer(address, uint256) public returns (bool) {
+    // prettier-ignore
+    function transfer(address, uint256) public override returns (bool) {
         revert("Disabled feature");
     }
 
-    function allowance(address, address) public view returns (uint256) {
+    // prettier-ignore
+    function allowance(address, address) public override view returns (uint256) {
         revert("Disabled feature");
     }
 
-    function approve(address, uint256) public returns (bool) {
+    // prettier-ignore
+    function approve(address, uint256) public override returns (bool) {
         revert("Disabled feature");
     }
 
-    function transferFrom(address, address, uint256) public returns (bool) {
+    // prettier-ignore
+    function transferFrom(
+        address,
+        address,
+        uint256
+    ) public override returns (bool) {
         revert("Disabled feature");
     }
 }

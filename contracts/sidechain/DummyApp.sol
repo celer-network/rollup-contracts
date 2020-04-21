@@ -1,4 +1,4 @@
-pragma solidity ^0.5.2;
+pragma solidity ^0.6.6;
 
 import {ISidechainERC20} from "./ISidechainERC20.sol";
 

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.2;
+pragma solidity ^0.6.6;
 pragma experimental ABIEncoderV2;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -105,7 +105,15 @@ contract RollupChain {
     function getStateRootsAndStorageSlots(
         bytes memory _preStateTransition,
         bytes memory _invalidTransition
-    ) public returns (bool, bytes32, bytes32, uint256[] memory) {
+    )
+        public
+        returns (
+            bool,
+            bytes32,
+            bytes32,
+            uint256[] memory
+        )
+    {
         bool success;
         bytes memory returnData;
         bytes32 preStateRoot;

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.2;
+pragma solidity ^0.6.6;
 pragma experimental ABIEncoderV2;
 
 /* Internal Imports */
@@ -181,9 +181,11 @@ contract RollupMerkleUtils {
      * @param _path The path from the leaf to the root / the index of the leaf.
      * @param _siblings The sibling nodes along the way.
      */
-    function storeLeaf(bytes32 _leaf, uint256 _path, bytes32[] memory _siblings)
-        public
-    {
+    function storeLeaf(
+        bytes32 _leaf,
+        uint256 _path,
+        bytes32[] memory _siblings
+    ) public {
         // First compute the leaf node
         bytes32 computedNode = _leaf;
         for (uint256 i = 0; i < _siblings.length; i++) {
@@ -256,9 +258,11 @@ contract RollupMerkleUtils {
      * @param _leftChild The left child of the parent in the tree
      * @param _rightChild The right child of the parent in the tree
      */
-    function storeNode(bytes32 _parent, bytes32 _leftChild, bytes32 _rightChild)
-        public
-    {
+    function storeNode(
+        bytes32 _parent,
+        bytes32 _leftChild,
+        bytes32 _rightChild
+    ) public {
         tree.nodes[getLeftSiblingKey(_parent)] = _leftChild;
         tree.nodes[getRightSiblingKey(_parent)] = _rightChild;
     }

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.2;
+pragma solidity ^0.6.6;
 pragma experimental ABIEncoderV2;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -28,7 +28,7 @@ contract TransitionEvaluator {
     function evaluateTransition(
         bytes calldata _transition,
         DataTypes.StorageSlot[] calldata _storageSlots
-    ) external returns (bytes32[] memory) {
+    ) external view returns (bytes32[] memory) {
         // Convert our inputs to memory
         bytes memory transition = _transition;
 

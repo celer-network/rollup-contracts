@@ -1,6 +1,6 @@
-pragma solidity ^0.5.2;
+pragma solidity ^0.6.6;
 
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/access/Ownable.sol";
 
 
 contract RollupTokenRegistry is Ownable {
