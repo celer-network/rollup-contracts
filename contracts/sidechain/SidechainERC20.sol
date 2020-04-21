@@ -43,9 +43,6 @@ contract SidechainERC20 is ISidechainERC20, ERC20, ERC20Detailed, Ownable {
     mapping(address => uint256) public nonces;
     mapping(address => bool) public registeredAccounts;
 
-    // Default hash for EOA accounts returned by extcodehash
-    bytes32 internal constant ACCOUNT_HASH = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
-
     constructor(
         address _mainchainToken,
         string memory _name,
