@@ -8,7 +8,7 @@ import {DataTypes as dt} from "./DataTypes.sol";
 /*
  * Merkle Tree Utilities for Rollup
  */
-contract RollupMerkleUtils {
+contract MerkleUtils {
     /* Structs */
     // A partial merkle tree which can be updated with new nodes, recomputing the root
     struct SparseMerkleTree {

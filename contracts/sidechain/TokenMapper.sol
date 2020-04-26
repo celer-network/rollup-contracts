@@ -5,13 +5,13 @@ import "./SidechainERC20.sol";
 
 
 contract TokenMapper is Ownable {
+    mapping(address => address) public mainchainTokenToSidechainToken;
+    mapping(address => address) public sidechainTokenToMainchainToken;
+
     event TokenMapped(
         address indexed mainchainToken,
         address indexed sidechainToken
     );
-
-    mapping(address => address) public mainchainTokenToSidechainToken;
-    mapping(address => address) public sidechainTokenToMainchainToken;
 
     function mapToken(
         address _mainchainToken,

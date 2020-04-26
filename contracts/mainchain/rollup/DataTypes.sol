@@ -27,7 +27,7 @@ contract DataTypes {
         uint256 nonce;
     }
 
-    struct InitialDepositTransition {
+    struct CreateAndDepositTransition {
         uint256 transitionType;
         bytes32 stateRoot;
         uint256 accountSlotIndex;
@@ -52,6 +52,19 @@ contract DataTypes {
         uint256 accountSlotIndex;
         uint256 tokenIndex;
         uint256 amount;
+        uint256 nonce;
+        bytes signature;
+    }
+
+    struct CreateAndTransferTransition {
+        uint256 transitionType;
+        bytes32 stateRoot;
+        uint256 senderSlotIndex;
+        uint256 recipientSlotIndex;
+        address recipientAccount;
+        uint256 tokenIndex;
+        uint256 amount;
+        uint256 nonce;
         bytes signature;
     }
 
@@ -80,7 +93,8 @@ contract DataTypes {
     struct AccountInfo {
         address account;
         uint256[] balances;
-        uint256[] nonces;
+        uint256[] transferNonces;
+        uint256[] withdrawNonces;
     }
 
     struct StorageSlot {

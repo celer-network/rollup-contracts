@@ -13,34 +13,44 @@ run_abigen() {
 
 rm -rf genfiles
 mkdir -p genfiles
+extract_abi_bin AccountRegistry
 extract_abi_bin DataTypes
-extract_abi_bin TransitionEvaluator
-extract_abi_bin RollupTokenRegistry
-extract_abi_bin RollupChain
-extract_abi_bin RollupMerkleUtils
 extract_abi_bin DepositWithdrawManager
+extract_abi_bin MerkleUtils
+extract_abi_bin RollupChain
+extract_abi_bin TokenRegistry
+extract_abi_bin TransitionEvaluator
+extract_abi_bin ValidatorRegistry
+
+extract_abi_bin BlockCommittee
+extract_abi_bin DummyApp
 extract_abi_bin SidechainERC20
 extract_abi_bin TokenMapper
-extract_abi_bin DummyApp
 
 rm -rf bindings/go/mainchain/rollup
 mkdir -p bindings/go/mainchain/rollup
-run_abigen TransitionEvaluator rollup bindings/go/mainchain/rollup/transition_evaluator
-run_abigen RollupTokenRegistry rollup bindings/go/mainchain/rollup/rollup_token_registry
-run_abigen RollupChain rollup bindings/go/mainchain/rollup/rollup_chain
-run_abigen RollupMerkleUtils rollup bindings/go/mainchain/rollup/rollup_merkle_utils
+run_abigen AccountRegistry rollup bindings/go/mainchain/rollup/account_registry
 run_abigen DepositWithdrawManager rollup bindings/go/mainchain/rollup/deposit_withdraw_manager
+run_abigen MerkleUtils rollup bindings/go/mainchain/rollup/merkle_utils
+run_abigen RollupChain rollup bindings/go/mainchain/rollup/rollup_chain
+run_abigen TokenRegistry rollup bindings/go/mainchain/rollup/token_registry
+run_abigen TransitionEvaluator rollup bindings/go/mainchain/rollup/transition_evaluator
+run_abigen ValidatorRegistry rollup bindings/go/mainchain/rollup/validator_registry
 
 rm -rf bindings/go/sidechain
 mkdir -p bindings/go/sidechain
-run_abigen SidechainERC20 sidechain bindings/go/sidechain/sidechain_erc20
+run_abigen BlockCommittee sidechain bindings/go/sidechain/block_committee
 run_abigen DummyApp sidechain bindings/go/sidechain/dummy_app
+run_abigen SidechainERC20 sidechain bindings/go/sidechain/sidechain_erc20
 run_abigen TokenMapper sidechain bindings/go/sidechain/token_mapper
 
-# Hack until figured out how to avoid duplicate declaration with abigen
+# Hack until we figure out how to avoid duplicate declaration with abigen
 sed -i '' -e '/^\/\/ DataTypesAccountInfo.*$/,/^}$/d' \
   -e '/^\/\/ DataTypesStorageSlot.*$/,/^}$/d' \
   bindings/go/mainchain/rollup/transition_evaluator.go
-sed -i '' -e '/^\/\/ DataTypesIncludedTransition.*$/,/^}$/d' \
+sed -i '' -e '/^\/\/ DataTypesAccountInfo.*$/,/^}$/d' \
+  -e '/^\/\/ DataTypesIncludedStorageSlot.*$/,/^}$/d' \
+  -e '/^\/\/ DataTypesIncludedTransition.*$/,/^}$/d' \
+  -e '/^\/\/ DataTypesStorageSlot.*$/,/^}$/d' \
   -e '/^\/\/ DataTypesTransitionInclusionProof.*$/,/^}$/d' \
   bindings/go/mainchain/rollup/deposit_withdraw_manager.go

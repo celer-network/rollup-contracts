@@ -3,15 +3,15 @@ pragma solidity ^0.6.6;
 import "openzeppelin-solidity/contracts/access/Ownable.sol";
 
 
-contract RollupTokenRegistry is Ownable {
+contract TokenRegistry is Ownable {
+    mapping(address => uint256) public tokenAddressToTokenIndex;
+    mapping(uint256 => address) public tokenIndexToTokenAddress;
+    uint256 numTokens = 0;
+
     event TokenRegistered(
         address indexed tokenAddress,
         uint256 indexed tokenIndex
     );
-
-    mapping(address => uint256) public tokenAddressToTokenIndex;
-    mapping(uint256 => address) public tokenIndexToTokenAddress;
-    uint256 numTokens = 0;
 
     function registerToken(address _tokenAddress) external onlyOwner {
         // Register token with an index if it isn't already
@@ -22,7 +22,7 @@ contract RollupTokenRegistry is Ownable {
             tokenAddressToTokenIndex[_tokenAddress] = numTokens;
             tokenIndexToTokenAddress[numTokens] = _tokenAddress;
             emit TokenRegistered(_tokenAddress, numTokens);
-            numTokens = numTokens + 1;
+            numTokens++;
         }
     }
 }

@@ -5,9 +5,10 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /* Internal Imports */
 import {DataTypes as dt} from "./DataTypes.sol";
-import {RollupMerkleUtils} from "./RollupMerkleUtils.sol";
+import {MerkleUtils} from "./MerkleUtils.sol";
 import {TransitionEvaluator} from "./TransitionEvaluator.sol";
-import {RollupTokenRegistry} from "./RollupTokenRegistry.sol";
+import {TokenRegistry} from "./TokenRegistry.sol";
+import {ValidatorRegistry} from "./ValidatorRegistry.sol";
 
 
 contract RollupChain {
@@ -16,36 +17,50 @@ contract RollupChain {
     /* Fields */
     // The state transition evaluator
     TransitionEvaluator transitionEvaluator;
-    // The Rollup Merkle Tree library (currently a contract for ease of testing)
-    RollupMerkleUtils merkleUtils;
+    // The Merkle Tree library (currently a contract for ease of testing)
+    MerkleUtils merkleUtils;
     // The token registry
-    RollupTokenRegistry tokenRegistry;
+    TokenRegistry tokenRegistry;
+    // The validator registry
+    ValidatorRegistry validatorRegistry;
     // All the blocks!
     dt.Block[] public blocks;
     bytes32 public constant ZERO_BYTES32 = 0x0000000000000000000000000000000000000000000000000000000000000000;
     // State tree height
     uint256 constant STATE_TREE_HEIGHT = 32;
+    // TODO: Set a reasonable wait period
+    uint256 constant WITHDRAW_WAIT_PERIOD = 0;
 
-    address public aggregatorAddress;
+    address public committerAddress;
 
     /* Events */
-    event DecodedTransition(bool success, bytes returnData);
-    event NewRollupBlock(bytes[] block, uint256 blockNumber);
+    event RollupBlockCommitted(bytes[] block, uint256 blockNumber);
     event Transition(bytes data);
+    event DecodedTransition(bool success, bytes returnData);
 
     /***************
      * Constructor *
      **************/
     constructor(
         address _transitionEvaluatorAddress,
-        address _rollupMerkleUtilsAddress,
+        address _merkleUtilsAddress,
         address _tokenRegistryAddress,
-        address _aggregatorAddress
+        address _validatorRegistryAddress,
+        address _committerAddress
     ) public {
         transitionEvaluator = TransitionEvaluator(_transitionEvaluatorAddress);
-        merkleUtils = RollupMerkleUtils(_rollupMerkleUtilsAddress);
-        tokenRegistry = RollupTokenRegistry(_tokenRegistryAddress);
-        aggregatorAddress = _aggregatorAddress;
+        merkleUtils = MerkleUtils(_merkleUtilsAddress);
+        tokenRegistry = TokenRegistry(_tokenRegistryAddress);
+        validatorRegistry = ValidatorRegistry(_validatorRegistryAddress);
+        committerAddress = _committerAddress;
+    }
+
+    modifier onlyValidatorRegistry() {
+        require(
+            msg.sender == address(validatorRegistry),
+            "Only validator registry may perform action"
+        );
+        _;
     }
 
     /* Methods */
@@ -55,28 +70,44 @@ contract RollupChain {
         }
     }
 
+    function getCurrentBlockNumber() public view returns (uint256) {
+        return blocks.length - 1;
+    }
+
+    function setCommitterAddress(address _committerAddress)
+        external
+        onlyValidatorRegistry
+    {
+        committerAddress = _committerAddress;
+    }
+
     /**
-     * Submits a new block which is then rolled up.
+     * Commits a new block which is then rolled up.
      */
-    function submitBlock(bytes[] calldata _block) external returns (bytes32) {
+    function commitBlock(bytes[] calldata _transitions)
+        external
+        returns (bytes32)
+    {
         require(
-            msg.sender == aggregatorAddress,
-            "Only the aggregator may submit blocks"
+            msg.sender == committerAddress,
+            "Only the committer may submit blocks"
         );
 
-        // For debugging
-        for (uint256 i = 0; i < _block.length; i++) {
-            emit Transition(_block[i]);
+        // Emit transition, for debugging
+        for (uint256 i = 0; i < _transitions.length; i++) {
+            emit Transition(_transitions[i]);
         }
 
-        bytes32 root = merkleUtils.getMerkleRoot(_block);
+        bytes32 root = merkleUtils.getMerkleRoot(_transitions);
         dt.Block memory rollupBlock = dt.Block({
             rootHash: root,
-            blockSize: _block.length
+            blockSize: _transitions.length
         });
         blocks.push(rollupBlock);
         // NOTE: Toggle the event if you'd like easier historical block queries
-        emit NewRollupBlock(_block, blocks.length - 1);
+        emit RollupBlockCommitted(_transitions, blocks.length - 1);
+
+        validatorRegistry.pickNextCommitter();
         return root;
     }
 
@@ -100,6 +131,38 @@ contract RollupChain {
             uint256(_includedStorageSlot.storageSlot.slotIndex),
             _includedStorageSlot.siblings
         );
+    }
+
+    function getStateRootAndStorageSlots(bytes memory _transition)
+        public
+        returns (
+            bool,
+            bytes32,
+            uint256[] memory
+        )
+    {
+        bool success;
+        bytes memory returnData;
+        bytes32 stateRoot;
+        uint256[] memory storageSlots;
+        (success, returnData) = address(transitionEvaluator).call(
+            abi.encodeWithSelector(
+                transitionEvaluator
+                    .getTransitionStateRootAndAccessList
+                    .selector,
+                _transition
+            )
+        );
+        // Emit the output as an event, for debugging
+        emit DecodedTransition(success, returnData);
+        // If the call was successful let's decode!
+        if (success) {
+            (stateRoot, storageSlots) = abi.decode(
+                (returnData),
+                (bytes32, uint256[])
+            );
+        }
+        return (success, stateRoot, storageSlots);
     }
 
     function getStateRootsAndStorageSlots(
@@ -129,7 +192,7 @@ contract RollupChain {
                 _preStateTransition
             )
         );
-        // Emit the output as an event
+        // Emit the output as an event, for debugging
         emit DecodedTransition(success, returnData);
         // Make sure the call was successful
         require(
@@ -149,7 +212,7 @@ contract RollupChain {
                 _invalidTransition
             )
         );
-        // Emit the output as an event
+        // Emit the output as an event, for debugging
         emit DecodedTransition(success, returnData);
         // If the call was successful let's decode!
         if (success) {
@@ -159,6 +222,45 @@ contract RollupChain {
             );
         }
         return (success, preStateRoot, postStateRoot, storageSlots);
+    }
+
+    function verifyAndRecordWithdrawTransition(
+        address _account,
+        bytes32 _preStateRoot,
+        dt.IncludedTransition memory _includedTransition,
+        dt.IncludedStorageSlot memory _transitionStorageSlot
+    ) public {
+        bytes memory withdrawTransition = _includedTransition.transition;
+        require(
+            checkTransitionInclusion(_includedTransition),
+            "Withdraw transition must be included"
+        );
+        bool success;
+        bytes32 _;
+        uint256[] memory storageSlotIndexes;
+        (success, _, storageSlotIndexes) = getStateRootAndStorageSlots(
+            withdrawTransition
+        );
+        require(success, "Failed to decode withdraw transition");
+
+        require(
+            _transitionStorageSlot.storageSlot.slotIndex ==
+                storageSlotIndexes[0],
+            "Supplied storage slot index is incorrect!"
+        );
+
+        merkleUtils.setMerkleRootAndHeight(_preStateRoot, STATE_TREE_HEIGHT);
+        verifyAndStoreStorageSlotInclusionProof(_transitionStorageSlot);
+        require(
+            _account == _transitionStorageSlot.storageSlot.value.account,
+            "Withdraw account mismatch"
+        );
+        require(
+            getCurrentBlockNumber() -
+                _includedTransition.inclusionProof.blockNumber >
+                WITHDRAW_WAIT_PERIOD,
+            "Withdraw wait period not passed"
+        );
     }
 
     /**
@@ -370,7 +472,8 @@ contract RollupChain {
             _accountInfo.account ==
             0x0000000000000000000000000000000000000000 &&
             _accountInfo.balances.length == 0 &&
-            _accountInfo.nonces.length == 0
+            _accountInfo.transferNonces.length == 0 &&
+            _accountInfo.withdrawNonces.length == 0
         ) {
             return abi.encodePacked(uint256(0));
         }
@@ -380,7 +483,8 @@ contract RollupChain {
             abi.encode(
                 _accountInfo.account,
                 _accountInfo.balances,
-                _accountInfo.nonces
+                _accountInfo.transferNonces,
+                _accountInfo.withdrawNonces
             );
     }
 }

@@ -11,11 +11,14 @@ import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 contract SidechainERC20 is ISidechainERC20, ERC20, Ownable {
     using SafeMath for uint256;
 
+    address public mainchainToken;
+    mapping(address => uint256) public transferNonces;
+    mapping(address => uint256) public withdrawNonces;
+
     event Deposit(
         address indexed mainchainToken,
         address indexed account,
         uint256 amount,
-        uint256 nonce,
         bytes signature
     );
 
@@ -36,10 +39,6 @@ contract SidechainERC20 is ISidechainERC20, ERC20, Ownable {
         bytes signature
     );
 
-    address public mainchainToken;
-    mapping(address => uint256) public nonces;
-    mapping(address => bool) public registeredAccounts;
-
     constructor(
         address _mainchainToken,
         string memory _name,
@@ -52,76 +51,71 @@ contract SidechainERC20 is ISidechainERC20, ERC20, Ownable {
     }
 
     function deposit(
-        address account,
-        uint256 amount,
-        bytes memory signature
+        address _account,
+        uint256 _amount,
+        bytes memory _signature
     ) public {
-        require(amount > 0 && account != address(0x0));
+        require(_amount > 0 && _account != address(0x0));
 
         // TODO: Check validator signature
 
-        if (!registeredAccounts[account]) {
-            registeredAccounts[account] = true;
-        }
+        _mint(_account, _amount);
 
-        _mint(account, amount);
+        // TODO: nonce?
 
-        uint256 oldNonce = nonces[account];
-        nonces[account] = oldNonce.add(1);
-
-        emit Deposit(mainchainToken, account, amount, oldNonce, signature);
+        emit Deposit(mainchainToken, _account, _amount, _signature);
     }
 
     function withdraw(
-        address account,
-        uint256 amount,
-        bytes memory signature
+        address _account,
+        uint256 _amount,
+        bytes memory _signature
     ) public {
-        require(amount > 0 && balanceOf(account) >= amount);
+        require(_amount > 0 && balanceOf(_account) >= _amount);
 
-        _burn(account, amount);
+        _burn(_account, _amount);
 
-        uint256 oldNonce = nonces[account];
-        nonces[account] = oldNonce.add(1);
+        uint256 oldNonce = withdrawNonces[_account];
+        withdrawNonces[_account] = oldNonce.add(1);
 
-        emit Withdraw(mainchainToken, account, amount, oldNonce, signature);
+        emit Withdraw(mainchainToken, _account, _amount, oldNonce, _signature);
     }
 
     // prettier-ignore
     function transfer(
-        address sender,
-        address recipient,
-        uint256 amount,
-        bytes memory signature
+        address _sender,
+        address _recipient,
+        uint256 _amount,
+        bytes memory _signature
     ) public override returns (bool) {
-        uint256 oldNonce = nonces[sender];
-        if (!Address.isContract(sender)) {
+        uint256 oldNonce = transferNonces[_sender];
+        if (!Address.isContract(_sender)) {
             bytes32 hash = keccak256(
                 abi.encodePacked(
-                    sender,
-                    recipient,
+                    _sender,
+                    _recipient,
                     mainchainToken,
-                    amount,
+                    _amount,
                     oldNonce
                 )
             );
             bytes32 prefixedHash = ECDSA.toEthSignedMessageHash(hash);
             require(
-                ECDSA.recover(prefixedHash, signature) == sender,
+                ECDSA.recover(prefixedHash, _signature) == _sender,
                 "Wrong signature"
             );
         }
 
-        _transfer(sender, recipient, amount);
-        nonces[sender] = oldNonce.add(1);
+        _transfer(_sender, _recipient, _amount);
+        transferNonces[_sender] = oldNonce.add(1);
 
         emit Transfer(
             mainchainToken,
-            sender,
-            recipient,
-            amount,
+            _sender,
+            _recipient,
+            _amount,
             oldNonce,
-            signature
+            _signature
         );
         return true;
     }

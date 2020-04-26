@@ -6,7 +6,8 @@ import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 
 /* Internal Imports */
 import {DataTypes} from "./DataTypes.sol";
-import {RollupTokenRegistry} from "./RollupTokenRegistry.sol";
+import {AccountRegistry} from "./AccountRegistry.sol";
+import {TokenRegistry} from "./TokenRegistry.sol";
 
 
 contract TransitionEvaluator {
@@ -14,15 +15,20 @@ contract TransitionEvaluator {
 
     bytes32 constant ZERO_BYTES32 = 0x0000000000000000000000000000000000000000000000000000000000000000;
     // Transition Types
-    uint256 constant TRANSITION_TYPE_INITIAL_DEPOSIT = 0;
+    uint256 constant TRANSITION_TYPE_CREATE_AND_DEPOSIT = 0;
     uint256 constant TRANSITION_TYPE_DEPOSIT = 1;
     uint256 constant TRANSITION_TYPE_WITHDRAW = 2;
-    uint256 constant TRANSITION_TYPE_TRANSFER = 3;
+    uint256 constant TRANSITION_TYPE_CREATE_AND_TRANSFER = 3;
+    uint256 constant TRANSITION_TYPE_TRANSFER = 4;
 
-    RollupTokenRegistry tokenRegistry;
+    AccountRegistry accountRegistry;
+    TokenRegistry tokenRegistry;
 
-    constructor(address _tokenRegistryAddress) public {
-        tokenRegistry = RollupTokenRegistry(_tokenRegistryAddress);
+    constructor(address _accountRegistryAddress, address _tokenRegistryAddress)
+        public
+    {
+        accountRegistry = AccountRegistry(_accountRegistryAddress);
+        tokenRegistry = TokenRegistry(_tokenRegistryAddress);
     }
 
     function evaluateTransition(
@@ -40,10 +46,20 @@ contract TransitionEvaluator {
             uint256 slotIndex = _storageSlots[i].slotIndex;
             address account = _storageSlots[i].value.account;
             uint256[] memory balances = _storageSlots[i].value.balances;
-            uint256[] memory nonces = _storageSlots[i].value.nonces;
+            uint256[] memory transferNonces = _storageSlots[i]
+                .value
+                .transferNonces;
+            uint256[] memory withdrawNonces = _storageSlots[i]
+                .value
+                .withdrawNonces;
             storageSlots[i] = DataTypes.StorageSlot(
                 slotIndex,
-                DataTypes.AccountInfo(account, balances, nonces)
+                DataTypes.AccountInfo(
+                    account,
+                    balances,
+                    transferNonces,
+                    withdrawNonces
+                )
             );
         }
 
@@ -51,14 +67,17 @@ contract TransitionEvaluator {
         uint256 transitionType = extractTransitionType(transition);
         bytes32[] memory outputs;
         // Apply the transition and record the resulting storage slots
-        if (transitionType == TRANSITION_TYPE_INITIAL_DEPOSIT) {
+        if (transitionType == TRANSITION_TYPE_CREATE_AND_DEPOSIT) {
 
-                DataTypes.InitialDepositTransition memory initialDeposit
-             = decodeInitialDepositTransition(transition);
+                DataTypes.CreateAndDepositTransition memory createAndDeposit
+             = decodeCreateAndDepositTransition(transition);
 
 
                 DataTypes.AccountInfo memory updatedAccountInfo
-             = applyInitialDepositTransition(initialDeposit, storageSlots[0]);
+             = applyCreateAndDepositTransition(
+                createAndDeposit,
+                storageSlots[0]
+            );
             outputs = new bytes32[](1);
             outputs[0] = getAccountInfoHash(updatedAccountInfo);
         } else if (transitionType == TRANSITION_TYPE_DEPOSIT) {
@@ -81,6 +100,22 @@ contract TransitionEvaluator {
              = applyWithdrawTransition(withdraw, storageSlots[0]);
             outputs = new bytes32[](1);
             outputs[0] = getAccountInfoHash(updatedAccountInfo);
+        } else if (transitionType == TRANSITION_TYPE_CREATE_AND_TRANSFER) {
+
+                DataTypes.CreateAndTransferTransition memory createAndTransfer
+             = decodeCreateAndTransferTransition(transition);
+
+
+                DataTypes.AccountInfo[2] memory updatedAccountInfos
+             = applyCreateAndTransferTransition(
+                createAndTransfer,
+                [storageSlots[0], storageSlots[1]]
+            );
+            // Return the hash of both storage (leaf nodes to insert into the tree)
+            outputs = new bytes32[](2);
+            for (uint256 i = 0; i < updatedAccountInfos.length; i++) {
+                outputs[i] = getAccountInfoHash(updatedAccountInfos[i]);
+            }
         } else if (transitionType == TRANSITION_TYPE_TRANSFER) {
 
                 DataTypes.TransferTransition memory transfer
@@ -131,10 +166,10 @@ contract TransitionEvaluator {
         bytes32 stateRoot;
         uint256[] memory storageSlots;
         uint256 transitionType = extractTransitionType(rawTransition);
-        if (transitionType == TRANSITION_TYPE_INITIAL_DEPOSIT) {
+        if (transitionType == TRANSITION_TYPE_CREATE_AND_DEPOSIT) {
 
-                DataTypes.InitialDepositTransition memory transition
-             = decodeInitialDepositTransition(rawTransition);
+                DataTypes.CreateAndDepositTransition memory transition
+             = decodeCreateAndDepositTransition(rawTransition);
             stateRoot = transition.stateRoot;
             storageSlots = new uint256[](1);
             storageSlots[0] = transition.accountSlotIndex;
@@ -152,6 +187,14 @@ contract TransitionEvaluator {
             stateRoot = transition.stateRoot;
             storageSlots = new uint256[](1);
             storageSlots[0] = transition.accountSlotIndex;
+        } else if (transitionType == TRANSITION_TYPE_CREATE_AND_TRANSFER) {
+
+                DataTypes.CreateAndTransferTransition memory transition
+             = decodeCreateAndTransferTransition(rawTransition);
+            stateRoot = transition.stateRoot;
+            storageSlots = new uint256[](2);
+            storageSlots[0] = transition.senderSlotIndex;
+            storageSlots[1] = transition.recipientSlotIndex;
         } else if (transitionType == TRANSITION_TYPE_TRANSFER) {
 
                 DataTypes.TransferTransition memory transition
@@ -208,21 +251,28 @@ contract TransitionEvaluator {
             _accountInfo.balances.length == 0,
             "Balance array must be empty"
         );
-        require(_accountInfo.nonces.length == 0, "Nonce array must be empty");
+        require(
+            _accountInfo.transferNonces.length == 0,
+            "Transfer nonce array must be empty"
+        );
+        require(
+            _accountInfo.withdrawNonces.length == 0,
+            "Withdraw nonce array must be empty"
+        );
     }
 
     /**
-     * Apply an InitialDepositTransition.
+     * Apply a CreateAndDepositTransition.
      */
-    function applyInitialDepositTransition(
-        DataTypes.InitialDepositTransition memory _transition,
+    function applyCreateAndDepositTransition(
+        DataTypes.CreateAndDepositTransition memory _transition,
         DataTypes.StorageSlot memory _storageSlot
     ) public view returns (DataTypes.AccountInfo memory) {
         // Verify that the AccountInfo is empty
         verifyEmptyAccountInfo(_storageSlot.value);
         // Now set storage slot to have the address of the registered account
         _storageSlot.value.account = _transition.account;
-        // Next create a DepositTransition based on this InitialDepositTransition
+        // Next create a DepositTransition based on this CreateAndDepositTransition
         DataTypes.DepositTransition memory depositTransition = DataTypes
             .DepositTransition(
             TRANSITION_TYPE_DEPOSIT,
@@ -294,6 +344,31 @@ contract TransitionEvaluator {
         return outputStorage;
     }
 
+    function applyCreateAndTransferTransition(
+        DataTypes.CreateAndTransferTransition memory _transition,
+        DataTypes.StorageSlot[2] memory _storageSlots
+    ) public view returns (DataTypes.AccountInfo[2] memory) {
+        DataTypes.StorageSlot memory recipientStorageSlot = _storageSlots[1];
+        // Verify that the AccountInfo is empty
+        verifyEmptyAccountInfo(recipientStorageSlot.value);
+        // Now set storage slot to have the address of the registered account
+        recipientStorageSlot.value.account = _transition.recipientAccount;
+        // Next create a TransferTransition based on this CreateAndTransferTransition
+        DataTypes.TransferTransition memory transferTransition = DataTypes
+            .TransferTransition(
+            TRANSITION_TYPE_TRANSFER,
+            _transition.stateRoot,
+            _transition.senderSlotIndex,
+            _transition.recipientSlotIndex,
+            _transition.tokenIndex,
+            _transition.amount,
+            _transition.nonce,
+            _transition.signature
+        );
+        // Now simply apply the transfer transition as usual
+        return applyTransferTransition(transferTransition, _storageSlots);
+    }
+
     /**
      * Apply a TransferTransition.
      */
@@ -312,13 +387,15 @@ contract TransitionEvaluator {
             _transition.nonce
         );
 
-        // Next check to see if the signature is valid
-        bytes32 txHash = getTransferTxHash(transferTx);
-        bytes32 prefixedHash = ECDSA.toEthSignedMessageHash(txHash);
-        require(
-            ECDSA.recover(prefixedHash, _transition.signature) == sender,
-            "Transfer signature is invalid!"
-        );
+        if (accountRegistry.registeredAccounts(sender)) {
+            // Next check to see if the signature is valid
+            bytes32 txHash = getTransferTxHash(transferTx);
+            bytes32 prefixedHash = ECDSA.toEthSignedMessageHash(txHash);
+            require(
+                ECDSA.recover(prefixedHash, _transition.signature) == sender,
+                "Transfer signature is invalid!"
+            );
+        }
 
         // Create an array to store our output storage slots
         DataTypes.AccountInfo[2] memory outputStorage;
@@ -365,7 +442,8 @@ contract TransitionEvaluator {
                 abi.encode(
                     _accountInfo.account,
                     _accountInfo.balances,
-                    _accountInfo.nonces
+                    _accountInfo.transferNonces,
+                    _accountInfo.withdrawNonces
                 )
             );
     }
@@ -374,15 +452,12 @@ contract TransitionEvaluator {
      * Decoding *
      ***********/
 
-    /**
-     * Decode an InitialDepositTransition
-     * TODO: Decode directly into a struct.
-     */
-    function decodeInitialDepositTransition(bytes memory _rawBytes)
+    function decodeCreateAndDepositTransition(bytes memory _rawBytes)
         internal
         pure
-        returns (DataTypes.InitialDepositTransition memory)
+        returns (DataTypes.CreateAndDepositTransition memory)
     {
+        // TODO: Decode directly into a struct?
         (
             uint256 transitionType,
             bytes32 stateRoot,
@@ -395,8 +470,8 @@ contract TransitionEvaluator {
             (_rawBytes),
             (uint256, bytes32, uint256, address, uint256, uint256, bytes)
         );
-        DataTypes.InitialDepositTransition memory transition = DataTypes
-            .InitialDepositTransition(
+        DataTypes.CreateAndDepositTransition memory transition = DataTypes
+            .CreateAndDepositTransition(
             transitionType,
             stateRoot,
             accountSlotIndex,
@@ -447,10 +522,11 @@ contract TransitionEvaluator {
             uint256 accountSlotIndex,
             uint256 tokenIndex,
             uint256 amount,
+            uint256 nonce,
             bytes memory signature
         ) = abi.decode(
             (_rawBytes),
-            (uint256, bytes32, uint256, uint256, uint256, bytes)
+            (uint256, bytes32, uint256, uint256, uint256, uint256, bytes)
         );
         DataTypes.WithdrawTransition memory transition = DataTypes
             .WithdrawTransition(
@@ -459,15 +535,56 @@ contract TransitionEvaluator {
             accountSlotIndex,
             tokenIndex,
             amount,
+            nonce,
             signature
         );
         return transition;
     }
 
-    /**
-     * Decode a TransferTransition
-     * TODO: Decode directly into a struct.
-     */
+    function decodeCreateAndTransferTransition(bytes memory _rawBytes)
+        internal
+        pure
+        returns (DataTypes.CreateAndTransferTransition memory)
+    {
+        (
+            uint256 transitionType,
+            bytes32 stateRoot,
+            uint256 senderSlotIndex,
+            uint256 recipientSlotIndex,
+            address recipientAccount,
+            uint256 tokenIndex,
+            uint256 amount,
+            uint256 nonce,
+            bytes memory signature
+        ) = abi.decode(
+            (_rawBytes),
+            (
+                uint256,
+                bytes32,
+                uint256,
+                uint256,
+                address,
+                uint256,
+                uint256,
+                uint256,
+                bytes
+            )
+        );
+        DataTypes.CreateAndTransferTransition memory transition = DataTypes
+            .CreateAndTransferTransition(
+            transitionType,
+            stateRoot,
+            senderSlotIndex,
+            recipientSlotIndex,
+            recipientAccount,
+            tokenIndex,
+            amount,
+            nonce,
+            signature
+        );
+        return transition;
+    }
+
     function decodeTransferTransition(bytes memory _rawBytes)
         internal
         pure
