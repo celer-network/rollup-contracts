@@ -29,11 +29,21 @@ contract ValidatorRegistry is Ownable {
         onlyOwner
     {
         rollupChain = RollupChain(_rollupChainAddress);
+        resetValidators(validators);
     }
 
     function setValidators(address[] calldata _validators) external onlyOwner {
+        resetValidators(_validators);
+    }
+
+    function resetValidators(address[] memory _validators) internal {
+        require(_validators.length > 0, "Empty validator set");
+        require(address(rollupChain) != address(0), "RollupChain not set");
+
         validators = _validators;
         currentCommitterIndex = 0;
+        currentCommitter = validators[0];
+        rollupChain.setCommitterAddress(currentCommitter);
     }
 
     function checkSignatures(

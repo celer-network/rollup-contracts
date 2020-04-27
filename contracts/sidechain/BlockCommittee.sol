@@ -37,7 +37,7 @@ contract BlockCommittee is Ownable {
     }
 
     constructor(address[] memory _validators) public {
-        validators = _validators;
+        resetValidators(_validators);
     }
 
     function setValidators(address[] calldata _validators)
@@ -45,9 +45,16 @@ contract BlockCommittee is Ownable {
         onlyOwner
         onlyWhenProposalOngoingStatus(false)
     {
+        resetValidators(_validators);
+    }
+
+    function resetValidators(address[] memory _validators) internal {
+        require(_validators.length > 0, "Empty validator set");
+
         validators = _validators;
         signatures = new bytes[](validators.length);
         currentCommitterIndex = 0;
+        currentCommitter = validators[0];
     }
 
     function proposeBlock(

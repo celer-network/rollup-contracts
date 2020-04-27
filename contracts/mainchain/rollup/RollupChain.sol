@@ -34,7 +34,7 @@ contract RollupChain {
     address public committerAddress;
 
     /* Events */
-    event RollupBlockCommitted(bytes[] block, uint256 blockNumber);
+    event RollupBlockCommitted(uint256 blockNumber, bytes[] transitions);
     event Transition(bytes data);
     event DecodedTransition(bool success, bytes returnData);
 
@@ -115,7 +115,7 @@ contract RollupChain {
         });
         blocks.push(rollupBlock);
         // NOTE: Toggle the event if you'd like easier historical block queries
-        emit RollupBlockCommitted(_transitions, _blockNumber);
+        emit RollupBlockCommitted(_blockNumber, _transitions);
 
         validatorRegistry.pickNextCommitter();
         return root;
