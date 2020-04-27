@@ -1,6 +1,8 @@
 pragma solidity ^0.6.6;
+pragma experimental ABIEncoderV2;
 
 import "openzeppelin-solidity/contracts/access/Ownable.sol";
+import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 import {RollupChain} from "./RollupChain.sol";
 
 
@@ -32,6 +34,34 @@ contract ValidatorRegistry is Ownable {
     function setValidators(address[] calldata _validators) external onlyOwner {
         validators = _validators;
         currentCommitterIndex = 0;
+    }
+
+    function checkSignatures(
+        uint256 _blockNumber,
+        bytes[] calldata _transitions,
+        bytes[] calldata _signatures
+    ) external view onlyRollupChain returns (bool) {
+        uint256 numValidators = validators.length;
+        uint256 numSignatures;
+        for (uint256 i = 0; i < numValidators; i++) {
+            bytes32 blockHash = keccak256(
+                abi.encode(_blockNumber, _transitions)
+            );
+            bytes32 prefixedHash = ECDSA.toEthSignedMessageHash(blockHash);
+            require(
+                ECDSA.recover(prefixedHash, _signatures[i]) == validators[i],
+                "Signature is invalid!"
+            );
+            numSignatures++;
+        }
+
+        // Require signatures from all the validators if less than 4, or 2/3 of
+        // the validators if at least 4.
+        bool hasEnoughSignatures = numValidators < 4
+            ? numSignatures == numValidators
+            : numSignatures * 3 > numValidators * 2;
+        require(hasEnoughSignatures, "Not enough signatures");
+        return true;
     }
 
     function pickNextCommitter() external onlyRollupChain {

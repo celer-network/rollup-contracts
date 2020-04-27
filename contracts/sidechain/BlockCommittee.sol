@@ -76,6 +76,7 @@ contract BlockCommittee is Ownable {
         for (uint256 i = 0; i < numValidators; i++) {
             if (_signer == validators[i]) {
                 signatures[i] = _signature;
+                isValidator = true;
                 break;
             }
         }
@@ -93,7 +94,7 @@ contract BlockCommittee is Ownable {
         numSignatures++;
         // Require signatures from all the validators if less than 4, or 2/3 of
         // the validators if at least 4.
-        bool hasEnoughSignatures = validators.length < 4
+        bool hasEnoughSignatures = numValidators < 4
             ? numSignatures == numValidators
             : numSignatures * 3 > numValidators * 2;
         if (hasEnoughSignatures) {

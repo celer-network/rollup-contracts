@@ -84,13 +84,23 @@ contract RollupChain {
     /**
      * Commits a new block which is then rolled up.
      */
-    function commitBlock(bytes[] calldata _transitions)
-        external
-        returns (bytes32)
-    {
+    function commitBlock(
+        uint256 _blockNumber,
+        bytes[] calldata _transitions,
+        bytes[] calldata _signatures
+    ) external returns (bytes32) {
         require(
             msg.sender == committerAddress,
             "Only the committer may submit blocks"
+        );
+        require(_blockNumber == blocks.length, "Wrong block number");
+        require(
+            validatorRegistry.checkSignatures(
+                _blockNumber,
+                _transitions,
+                _signatures
+            ),
+            "Failed signature check"
         );
 
         // Emit transition, for debugging
@@ -105,7 +115,7 @@ contract RollupChain {
         });
         blocks.push(rollupBlock);
         // NOTE: Toggle the event if you'd like easier historical block queries
-        emit RollupBlockCommitted(_transitions, blocks.length - 1);
+        emit RollupBlockCommitted(_transitions, _blockNumber);
 
         validatorRegistry.pickNextCommitter();
         return root;
