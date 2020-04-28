@@ -12,6 +12,8 @@ contract ValidatorRegistry is Ownable {
     uint256 private currentCommitterIndex;
     RollupChain rollupChain;
 
+    event CommitterChanged(address newCommitter);
+
     modifier onlyRollupChain() {
         require(
             msg.sender == address(rollupChain),
@@ -43,6 +45,7 @@ contract ValidatorRegistry is Ownable {
         validators = _validators;
         currentCommitterIndex = 0;
         currentCommitter = validators[0];
+        emit CommitterChanged(currentCommitter);
         rollupChain.setCommitterAddress(currentCommitter);
     }
 
@@ -77,6 +80,7 @@ contract ValidatorRegistry is Ownable {
     function pickNextCommitter() external onlyRollupChain {
         currentCommitterIndex = (currentCommitterIndex + 1) % validators.length;
         currentCommitter = validators[currentCommitterIndex];
+        emit CommitterChanged(currentCommitter);
         rollupChain.setCommitterAddress(currentCommitter);
     }
 }

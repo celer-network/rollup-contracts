@@ -14,19 +14,20 @@ contract BlockCommittee is Ownable {
     address[] public validators;
     bytes[] public signatures;
 
-    address public currentCommitter;
-    uint256 private currentCommitterIndex;
+    address public currentProposer;
+    uint256 private currentProposerIndex;
     bool private proposalOngoing;
     BlockProposal currentProposal;
     uint256 numSignatures;
 
     event BlockProposed(BlockProposal proposal);
     event BlockConsensusReached(BlockProposal proposal, bytes[] signatures);
+    event ProposerChanged(address newProposer);
 
-    modifier onlyCommitter() {
+    modifier onlyProposer() {
         require(
-            msg.sender == currentCommitter,
-            "Only committer may perform action"
+            msg.sender == currentProposer,
+            "Only proposer may perform action"
         );
         _;
     }
@@ -53,15 +54,16 @@ contract BlockCommittee is Ownable {
 
         validators = _validators;
         signatures = new bytes[](validators.length);
-        currentCommitterIndex = 0;
-        currentCommitter = validators[0];
+        currentProposerIndex = 0;
+        currentProposer = validators[0];
+        emit ProposerChanged(currentProposer);
     }
 
     function proposeBlock(
         uint256 _blockNumber,
         bytes[] calldata _transitions,
         bytes calldata _signature
-    ) external onlyCommitter onlyWhenProposalOngoingStatus(false) {
+    ) external onlyProposer onlyWhenProposalOngoingStatus(false) {
         bytes[] memory transitions = new bytes[](_transitions.length);
         for (uint256 i = 0; i < _transitions.length; i++) {
             transitions[i] = _transitions[i];
@@ -71,6 +73,7 @@ contract BlockCommittee is Ownable {
             transitions: transitions
         });
         proposalOngoing = true;
+        emit BlockProposed(currentProposal);
         signBlock(msg.sender, _signature);
     }
 
@@ -107,7 +110,7 @@ contract BlockCommittee is Ownable {
         if (hasEnoughSignatures) {
             emit BlockConsensusReached(currentProposal, signatures);
             resetStatusAfterConsensus();
-            pickNextCommitter();
+            pickNextProposer();
         }
     }
 
@@ -118,8 +121,9 @@ contract BlockCommittee is Ownable {
         numSignatures = 0;
     }
 
-    function pickNextCommitter() internal {
-        currentCommitterIndex = (currentCommitterIndex + 1) % validators.length;
-        currentCommitter = validators[currentCommitterIndex];
+    function pickNextProposer() internal {
+        currentProposerIndex = (currentProposerIndex + 1) % validators.length;
+        currentProposer = validators[currentProposerIndex];
+        emit ProposerChanged(currentProposer);
     }
 }
