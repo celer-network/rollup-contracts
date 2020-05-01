@@ -20,7 +20,7 @@ contract BlockCommittee is Ownable {
     BlockProposal currentProposal;
     uint256 numSignatures;
 
-    event BlockProposed(BlockProposal proposal);
+    event BlockProposed(uint256 blockNumber, bytes[] transitions);
     event BlockConsensusReached(BlockProposal proposal, bytes[] signatures);
     event ProposerChanged(address newProposer);
 
@@ -53,10 +53,10 @@ contract BlockCommittee is Ownable {
         require(_validators.length > 0, "Empty validator set");
 
         validators = _validators;
-        signatures = new bytes[](validators.length);
         currentProposerIndex = 0;
         currentProposer = validators[0];
         emit ProposerChanged(currentProposer);
+        resetConsensusStatus();
     }
 
     function proposeBlock(
@@ -73,7 +73,8 @@ contract BlockCommittee is Ownable {
             transitions: transitions
         });
         proposalOngoing = true;
-        emit BlockProposed(currentProposal);
+        // TODO: Figure out why emit BlockProposed(currentProposal) doesn't work
+        emit BlockProposed(_blockNumber, transitions);
         signBlock(msg.sender, _signature);
     }
 
@@ -109,14 +110,14 @@ contract BlockCommittee is Ownable {
             : numSignatures * 3 > numValidators * 2;
         if (hasEnoughSignatures) {
             emit BlockConsensusReached(currentProposal, signatures);
-            resetStatusAfterConsensus();
+            resetConsensusStatus();
             pickNextProposer();
         }
     }
 
-    function resetStatusAfterConsensus() internal {
+    function resetConsensusStatus() internal {
         proposalOngoing = false;
-        signatures = new bytes[](signatures.length);
+        signatures = new bytes[](validators.length);
         delete currentProposal;
         numSignatures = 0;
     }
