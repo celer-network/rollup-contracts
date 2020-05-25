@@ -12,8 +12,8 @@ import {TokenRegistry} from "./TokenRegistry.sol";
 
 
 contract DepositWithdrawManager {
-    mapping(address => mapping(address => uint256)) depositNonces;
-    mapping(address => mapping(address => uint256)) withdrawNonces;
+    mapping(address => mapping(address => uint256)) public depositNonces;
+    mapping(address => mapping(address => uint256)) public withdrawNonces;
 
     event TokenDeposited(address account, address token, uint256 amount);
     event TokenWithdrawn(address account, address token, uint256 amount);
@@ -78,16 +78,12 @@ contract DepositWithdrawManager {
 
     function withdraw(
         address _account,
-        bytes32 _preStateRoot,
         dt.IncludedTransition memory _includedTransition,
-        dt.IncludedStorageSlot memory _transitionStorageSlot,
         bytes memory _signature
     ) public {
-        rollupChain.verifyAndRecordWithdrawTransition(
-            _account,
-            _preStateRoot,
-            _includedTransition,
-            _transitionStorageSlot
+        require(
+            rollupChain.verifyWithdrawTransition(_account, _includedTransition),
+            "Withdraw transition invalid"
         );
         dt.WithdrawTransition memory withdrawTransition = transitionEvaluator
             .decodeWithdrawTransition(_includedTransition.transition);

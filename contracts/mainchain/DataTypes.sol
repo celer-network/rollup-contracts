@@ -17,6 +17,7 @@ contract DataTypes {
         address account;
         address token;
         uint256 amount;
+        uint256 nonce;
     }
 
     struct TransferTx {

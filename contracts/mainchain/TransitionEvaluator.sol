@@ -217,7 +217,8 @@ contract TransitionEvaluator {
                 abi.encodePacked(
                     _withdrawTx.account,
                     _withdrawTx.token,
-                    _withdrawTx.amount
+                    _withdrawTx.amount,
+                    _withdrawTx.nonce
                 )
             );
     }
@@ -325,7 +326,8 @@ contract TransitionEvaluator {
         DataTypes.WithdrawTx memory withdrawTx = DataTypes.WithdrawTx(
             account,
             tokenRegistry.tokenIndexToTokenAddress(_transition.tokenIndex),
-            _transition.amount
+            _transition.amount,
+            _transition.nonce
         );
 
         bytes32 txHash = getWithdrawTxHash(withdrawTx);
@@ -340,6 +342,10 @@ contract TransitionEvaluator {
         _storageSlot.value.balances[tokenIndex] = oldBalance.sub(
             withdrawTx.amount
         );
+        uint256 oldWithdrawNonce = _storageSlot
+            .value
+            .withdrawNonces[tokenIndex];
+        _storageSlot.value.withdrawNonces[tokenIndex] = oldWithdrawNonce.add(1);
         outputStorage = _storageSlot.value;
         return outputStorage;
     }
@@ -420,6 +426,12 @@ contract TransitionEvaluator {
         _storageSlots[1].value.balances[tokenIndex] = recipientOldBalance.add(
             transferTx.amount
         );
+        // Update sender's transfer nonce
+        uint256 oldTransferNonce = _storageSlots[0]
+            .value
+            .transferNonces[tokenIndex];
+        _storageSlots[0].value.transferNonces[tokenIndex] = oldTransferNonce
+            .add(1);
         // Set the outputs
         outputStorage[0] = _storageSlots[0].value;
         outputStorage[1] = _storageSlots[1].value;
@@ -624,5 +636,31 @@ contract TransitionEvaluator {
             signature
         );
         return transition;
+    }
+
+    /**
+     * Verify a WithdrawTransition signature.
+     */
+    function verifyWithdrawTransition(
+        address _account,
+        bytes memory _rawTransition
+    ) public view returns (bool) {
+
+            DataTypes.WithdrawTransition memory transition
+         = decodeWithdrawTransition(_rawTransition);
+        DataTypes.WithdrawTx memory withdrawTx = DataTypes.WithdrawTx(
+            _account,
+            tokenRegistry.tokenIndexToTokenAddress(transition.tokenIndex),
+            transition.amount,
+            transition.nonce
+        );
+
+        bytes32 txHash = getWithdrawTxHash(withdrawTx);
+        bytes32 prefixedHash = ECDSA.toEthSignedMessageHash(txHash);
+        require(
+            ECDSA.recover(prefixedHash, transition.signature) == _account,
+            "Withdraw signature is invalid!"
+        );
+        return true;
     }
 }

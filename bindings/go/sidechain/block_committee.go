@@ -20,7 +20,6 @@ var (
 	_ = big.NewInt
 	_ = strings.NewReader
 	_ = ethereum.NotFound
-	_ = abi.U256
 	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
@@ -480,7 +479,7 @@ type BlockCommitteeBlockConsensusReached struct {
 
 // FilterBlockConsensusReached is a free log retrieval operation binding the contract event 0xd7caf9f2fc3f80c9c139f02c1fe8d4dea9f3e20d4afbca1df37f080630cc1253.
 //
-// Solidity: event BlockConsensusReached(BlockCommitteeBlockProposal proposal, bytes[] signatures)
+// Solidity: event BlockConsensusReached((uint256,bytes[]) proposal, bytes[] signatures)
 func (_BlockCommittee *BlockCommitteeFilterer) FilterBlockConsensusReached(opts *bind.FilterOpts) (*BlockCommitteeBlockConsensusReachedIterator, error) {
 
 	logs, sub, err := _BlockCommittee.contract.FilterLogs(opts, "BlockConsensusReached")
@@ -492,7 +491,7 @@ func (_BlockCommittee *BlockCommitteeFilterer) FilterBlockConsensusReached(opts 
 
 // WatchBlockConsensusReached is a free log subscription operation binding the contract event 0xd7caf9f2fc3f80c9c139f02c1fe8d4dea9f3e20d4afbca1df37f080630cc1253.
 //
-// Solidity: event BlockConsensusReached(BlockCommitteeBlockProposal proposal, bytes[] signatures)
+// Solidity: event BlockConsensusReached((uint256,bytes[]) proposal, bytes[] signatures)
 func (_BlockCommittee *BlockCommitteeFilterer) WatchBlockConsensusReached(opts *bind.WatchOpts, sink chan<- *BlockCommitteeBlockConsensusReached) (event.Subscription, error) {
 
 	logs, sub, err := _BlockCommittee.contract.WatchLogs(opts, "BlockConsensusReached")
@@ -529,7 +528,7 @@ func (_BlockCommittee *BlockCommitteeFilterer) WatchBlockConsensusReached(opts *
 
 // ParseBlockConsensusReached is a log parse operation binding the contract event 0xd7caf9f2fc3f80c9c139f02c1fe8d4dea9f3e20d4afbca1df37f080630cc1253.
 //
-// Solidity: event BlockConsensusReached(BlockCommitteeBlockProposal proposal, bytes[] signatures)
+// Solidity: event BlockConsensusReached((uint256,bytes[]) proposal, bytes[] signatures)
 func (_BlockCommittee *BlockCommitteeFilterer) ParseBlockConsensusReached(log types.Log) (*BlockCommitteeBlockConsensusReached, error) {
 	event := new(BlockCommitteeBlockConsensusReached)
 	if err := _BlockCommittee.contract.UnpackLog(event, "BlockConsensusReached", log); err != nil {

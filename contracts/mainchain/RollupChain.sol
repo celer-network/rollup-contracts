@@ -234,43 +234,29 @@ contract RollupChain {
         return (success, preStateRoot, postStateRoot, storageSlots);
     }
 
-    function verifyAndRecordWithdrawTransition(
+    function verifyWithdrawTransition(
         address _account,
-        bytes32 _preStateRoot,
-        dt.IncludedTransition memory _includedTransition,
-        dt.IncludedStorageSlot memory _transitionStorageSlot
-    ) public {
-        bytes memory withdrawTransition = _includedTransition.transition;
+        dt.IncludedTransition memory _includedTransition
+    ) public view returns (bool) {
         require(
             checkTransitionInclusion(_includedTransition),
             "Withdraw transition must be included"
         );
-        bool success;
-        bytes32 _;
-        uint256[] memory storageSlotIndexes;
-        (success, _, storageSlotIndexes) = getStateRootAndStorageSlots(
-            withdrawTransition
-        );
-        require(success, "Failed to decode withdraw transition");
-
         require(
-            _transitionStorageSlot.storageSlot.slotIndex ==
-                storageSlotIndexes[0],
-            "Supplied storage slot index is incorrect!"
+            transitionEvaluator.verifyWithdrawTransition(
+                _account,
+                _includedTransition.transition
+            ),
+            "Withdraw signature is invalid"
         );
 
-        merkleUtils.setMerkleRootAndHeight(_preStateRoot, STATE_TREE_HEIGHT);
-        verifyAndStoreStorageSlotInclusionProof(_transitionStorageSlot);
-        require(
-            _account == _transitionStorageSlot.storageSlot.value.account,
-            "Withdraw account mismatch"
-        );
         require(
             getCurrentBlockNumber() -
-                _includedTransition.inclusionProof.blockNumber >
+                _includedTransition.inclusionProof.blockNumber >=
                 WITHDRAW_WAIT_PERIOD,
             "Withdraw wait period not passed"
         );
+        return true;
     }
 
     /**
